@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timestamp - Consultor de Datos Turísticos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif-title { font-family: 'Playfair Display', serif; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; transform: translateY(10px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-[#de545a] selection:text-white">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const COLORS = {
+            brandRed: '#EB1C23', softRed: '#de545a', softRedHover: '#c8474d', 
+            navyDark: '#1b212c', textSalmon: '#ff8e8b', greenOk: '#10b981'
+        };
+
+        const LOGO_PATH = "./assets/logo-red.svg";
+
+        // --- [ EXCLUSIÓN DE CAMPOS INTERNOS DE AWS ] ---
+        // Estos campos no se contarán en los porcentajes ni se mostrarán en los formularios
+        const EXCLUDED_FIELDS = [
+            'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app',
+            'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid',
+            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'
+        ].map(f => f.toLowerCase());
+
+        const CATEGORY_TRANSLATIONS = {
+            "accessible_poi": "Punto de Interés Accesible", "alojamientos": "Alojamientos", "archeological_site": "Sitio Arqueológico",
+            "atm": "Cajero Automático", "audio_guide": "Audioguía", "beach": "Playa", "bike_lane": "Carril Bici",
+            "bridge": "Puente", "castle": "Castillo", "church": "Iglesia", "complementary_activities_company": "Actividades Complementarias",
+            "destination_experience": "Experiencia en Destino", "educational_centre": "Centro Educativo", "equestrian_club": "Club Hípico",
+            "event": "Evento", "fire_station": "Estación de Bomberos", "garden": "Jardín", "gas_station": "Gasolinera",
+            "historical_or_cultural_resource": "Recurso Histórico o Cultural", "image_360": "Imagen 360", "leisure_and_culture_facility": "Instalación de Ocio y Cultura",
+            "medical_service": "Servicio Médico", "miscellaneous_service": "Servicios Misceláneos", "monument": "Monumento",
+            "municipio_ref": "Referencia de Municipio", "museum": "Museo", "natural_park": "Parque Natural", "natural_view_point": "Mirador Natural",
+            "offer": "Oferta", "pamphlet": "Folleto", "pharmacy": "Farmacia", "photography": "Fotografía", "police_station": "Comisaría de Policía",
+            "primary_care": "Atención Primaria", "restaurantes": "Restaurantes", "route": "Ruta", "shopping_mall": "Centro Comercial",
+            "sport_facility": "Instalación Deportiva", "supermarket": "Supermercado", "tour_guide": "Guía Turístico",
+            "tourism_destination": "Destino Turístico", "tourist_attraction_site": "Atracción Turística", "tourist_information_office": "Oficina de Turismo",
+            "town_hall": "Ayuntamiento", "traditional_market": "Mercado Tradicional", "trail": "Sendero", "travel_agency": "Agencia de Viajes",
+            "trivia_question": "Pregunta de Trivial", "vehicle_experience": "Experiencia en Vehículo", "vehicle_workshop": "Taller de Vehículos",
+            "vernacular_architecture": "Arquitectura Vernácula", "video_360": "Video 360", "video_media": "Medio de Video",
+            "virtual_visit": "Visita Virtual", "wifi_point": "Punto WiFi", "winery": "Bodega"
+        };
+
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+        const IconUser = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+        const IconLogout = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>;
+        const IconCheckCircle = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+        const IconBuilding = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>;
+        const IconEdit = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>;
+        const IconArrowLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+        const IconSave = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+        const IconX = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+        const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+        const IconSheet = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>;
+
+        function Dashboard({ userEmail, token, onLogout }) {
+            const [currentView, setCurrentView] = useState('dashboard'); 
+            const [tableFilter, setTableFilter] = useState(''); 
+            const [summaryData, setSummaryData] = useState([]); 
+            
+            const [tableData, setTableData] = useState([]);
+            const [tableSearch, setTableSearch] = useState('');
+            const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
+            const [selectedRecord, setSelectedRecord] = useState(null);
+
+            // 1. OBTENER ESTADÍSTICAS TOTALES
+            useEffect(() => {
+                fetch('http://localhost:3000/api/estadisticas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(res => res.json())
+                .then(data => { if (Array.isArray(data)) setSummaryData(data); })
+                .catch(err => console.error("Error conectando al backend:", err));
+            }, [token]);
+
+            // 2. FETCH REAL A AWS CUANDO SELECCIONAS UNA TABLA EN EL DESPLEGABLE
+            useEffect(() => {
+                if (tableFilter) {
+                    setTableData([]); // Limpiar mientras carga
+                    fetch(`http://localhost:3000/api/datos/${tableFilter}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    .then(res => res.json())
+                    .then(data => { 
+                        if (Array.isArray(data)) setTableData(data); 
+                    })
+                    .catch(err => console.error("Error cargando datos de la tabla:", err));
+                } else {
+                    setTableData([]);
+                }
+            }, [tableFilter, token]);
+
+            // 3. LÓGICA DINÁMICA DE CÁLCULO DE KPIs
+            const dashboardStats = useMemo(() => {
+                if (!tableFilter) {
+                    if(summaryData.length === 0) return null;
+                    const total = summaryData.reduce((acc, cat) => acc + cat.total, 0);
+                    const complete = summaryData.reduce((acc, cat) => acc + cat.complete, 0);
+                    const incomplete = total - complete;
+                    const percentComplete = total === 0 ? 0 : Math.round((complete / total) * 100);
+                    return { total, complete, incomplete, percentComplete, isGlobal: true };
+                } else {
+                    if(tableData.length === 0) return null;
+                    const total = tableData.length;
+                    let completeCount = 0;
+                    const dynamicFieldStats = {};
+
+                    // Calcular dinámicamente los campos vacíos ignorando los EXCLUIDOS
+                    tableData.forEach(row => {
+                        const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
+                        let filledCount = 0;
+                        
+                        editableKeys.forEach(k => {
+                            const hasValue = row[k] !== null && row[k] !== undefined && row[k].toString().trim() !== '';
+                            if (hasValue) filledCount++;
+                            
+                            if (!dynamicFieldStats[k]) dynamicFieldStats[k] = 0;
+                            if (hasValue) dynamicFieldStats[k]++;
+                        });
+                        
+                        if (editableKeys.length > 0 && filledCount === editableKeys.length) completeCount++;
+                        else if (editableKeys.length === 0) completeCount++;
+                    });
+
+                    const incomplete = total - completeCount;
+                    const percentComplete = Math.round((completeCount / total) * 100);
+
+                    // Seleccionar solo los 6 primeros campos dinámicos para el gráfico
+                    const fieldStats = Object.keys(dynamicFieldStats)
+                        .map(k => ({ name: k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' '), count: dynamicFieldStats[k] }))
+                        .slice(0, 6);
+
+                    return { total, complete: completeCount, incomplete, percentComplete, fieldStats, isGlobal: false };
+                }
+            }, [summaryData, tableData, tableFilter]);
+
+            // 4. MAPEO DINÁMICO DE FILAS PARA LA TABLA
+            const processedTableData = useMemo(() => {
+                return tableData.map(row => {
+                    const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
+                    let filledCount = 0;
+                    editableKeys.forEach(k => {
+                        if (row[k] !== null && row[k] !== undefined && row[k].toString().trim() !== '') filledCount++;
+                    });
+
+                    const numCampos = editableKeys.length;
+                    const percent = numCampos === 0 ? 100 : Math.round((filledCount / numCampos) * 100);
+                    
+                    // Buscar automáticamente el nombre de la fila
+                    const nombreValor = row.nombre || row.name || row.titulo || row.title || `Registro #${row.id || 'Sin ID'}`;
+                    
+                    // Extraer fecha
+                    let fechaActualizacion = "Sin fecha";
+                    if (row.fecha_actualizacion) {
+                        try { fechaActualizacion = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES'); } catch(e){}
+                    } else if (row.fecha_creacion) {
+                        try { fechaActualizacion = new Date(row.fecha_creacion).toLocaleDateString('es-ES'); } catch(e){}
+                    }
+
+                    return {
+                        ...row,
+                        _meta: { nombreValor, numCampos, percent, estado: percent === 100 ? 'OK' : 'Revisar', fechaActualizacion, editableKeys }
+                    };
+                });
+            }, [tableData]);
+
+            // 5. APLICAR FILTROS DEL BUSCADOR DE TEXTO
+            const filteredTableData = useMemo(() => {
+                return processedTableData.filter(row => {
+                    const matchesSearch = row._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase());
+                    const matchesIncomplete = showOnlyIncomplete ? row._meta.estado === 'Revisar' : true;
+                    return matchesSearch && matchesIncomplete;
+                });
+            }, [processedTableData, tableSearch, showOnlyIncomplete]);
+
+            const sortedCategories = Object.entries(CATEGORY_TRANSLATIONS).sort((a, b) => a[1].localeCompare(b[1]));
+            const goToCategory = (category) => { setSelectedCategory(category); setCurrentView('category'); };
+            const goToForm = (record) => { setSelectedRecord(record); setCurrentView('detail_form'); };
+            const goBack = () => { setCurrentView('dashboard'); };
+
+            return (
+                <div className="min-h-screen bg-slate-50 flex flex-col">
+                    <header className="bg-[#1b212c] text-white px-6 py-4 sticky top-0 z-20" style={{ borderBottom: `4px solid ${COLORS.brandRed}` }}>
+                        <div className="max-w-[1400px] mx-auto flex justify-between items-center">
+                            <div className="flex items-center space-x-6">
+                                <div className="flex items-center space-x-5">
+                                    <div className="text-[0.6rem] leading-[1.1] text-slate-300 text-center font-bold tracking-widest flex flex-col items-center">
+                                        <span className="text-[#facc15] text-lg leading-none mb-0.5">👑</span>DIPUTACIÓN<br/>DE BADAJOZ
+                                    </div>
+                                    <img src={LOGO_PATH} alt="Timestamp Logo" className="h-8 object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+                                    <div style={{display: 'none', color: COLORS.brandRed}} className="text-3xl font-black italic tracking-tighter">timestamp</div>
+                                </div>
+                                <div className="h-10 w-px bg-slate-600 hidden sm:block"></div>
+                                <div className="flex flex-col justify-center hidden sm:flex">
+                                    <div className="flex items-baseline space-x-2 font-serif-title">
+                                        <span className="text-xl font-bold text-white tracking-wide">Timestamp</span>
+                                        <span className="text-xl font-semibold tracking-wide" style={{ color: COLORS.textSalmon }}>Badajoz Data consulting</span>
+                                    </div>
+                                    <span className="text-[0.8rem] text-slate-400 mt-1 tracking-wide">Consultor de datos turísticos Badajoz</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-3 text-sm font-medium text-slate-300">
+                                <IconUser />
+                                <span>{userEmail ? userEmail.split('@')[0] : 'Admin'}</span>
+                                <button onClick={onLogout} className="hover:text-white transition-colors ml-1" title="Cerrar sesión"><IconLogout /></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-[1400px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex-1">
+                        {currentView === 'dashboard' && (
+                            <div className="space-y-6 fade-in">
+                                
+                                {/* BARRA SUPERIOR DE BÚSQUEDA */}
+                                <div className="flex flex-col sm:flex-row gap-3 w-full bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                    <div className="flex-1 relative">
+                                        <select 
+                                            className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none"
+                                            style={{ '--tw-ring-color': COLORS.softRed }}
+                                            value={tableFilter}
+                                            onChange={(e) => setTableFilter(e.target.value)}
+                                        >
+                                            <option value="">-- Selecciona una categoría para cargar datos de AWS --</option>
+                                            {sortedCategories.map(([key, value]) => (
+                                                <option key={key} value={key}>{value}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* DASHBOARD DE KPIs */}
+                                {dashboardStats ? (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col justify-between">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <span className="text-sm font-semibold text-slate-500">Calidad {dashboardStats.isGlobal ? 'Global' : 'de la Tabla'}</span>
+                                                    <div className={`p-1.5 rounded-md ${dashboardStats.percentComplete === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
+                                                        <IconCheckCircle />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-4xl font-bold text-slate-800 mb-2">{dashboardStats.percentComplete}%</p>
+                                                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                                        <div className="h-1.5 rounded-full transition-all duration-1000" style={{ width: `${dashboardStats.percentComplete}%`, backgroundColor: dashboardStats.percentComplete === 100 ? COLORS.greenOk : COLORS.softRed }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col justify-between">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <span className="text-sm font-semibold text-slate-500">Registros Incompletos</span>
+                                                    <div className="p-1.5 rounded-md bg-red-50 text-red-500"><IconAlert /></div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-4xl font-bold" style={{ color: COLORS.softRed }}>{dashboardStats.incomplete.toLocaleString()}</p>
+                                                    <p className="text-sm font-medium mt-1" style={{ color: COLORS.softRed }}>requieren atención</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col justify-between">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <span className="text-sm font-semibold text-slate-500">Total Negocios</span>
+                                                    <div className="p-1.5 rounded-md bg-blue-50 text-blue-500"><IconBuilding /></div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-4xl font-bold text-slate-800">{dashboardStats.total.toLocaleString()}</p>
+                                                    <p className="text-sm text-slate-500 font-medium mt-1">En {dashboardStats.isGlobal ? 'la Base de Datos' : 'esta categoría'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {!dashboardStats.isGlobal && dashboardStats.total > 0 && (
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                {/* Gráfico Dinámico */}
+                                                <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                                                    <h3 className="text-sm font-semibold text-slate-800 mb-6">Estado de los Campos Principales</h3>
+                                                    <div className="flex items-end h-48 space-x-4">
+                                                        {dashboardStats.fieldStats.map(stat => (
+                                                            <div key={stat.name} className="flex flex-col items-center flex-1 h-full justify-end group">
+                                                                <div className="w-full rounded-t-sm transition-all duration-500 relative flex items-end justify-center" 
+                                                                     style={{ height: `${(stat.count / dashboardStats.total) * 100}%`, backgroundColor: COLORS.softRed }}>
+                                                                    <span className="opacity-0 group-hover:opacity-100 absolute -top-6 bg-slate-800 text-white text-xs py-1 px-2 rounded transition-opacity">
+                                                                        {stat.count}
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-[0.65rem] text-center font-medium text-slate-500 mt-2 truncate w-full px-1">{stat.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col">
+                                                    <h3 className="text-sm font-semibold text-slate-800 mb-6">Completitud por Registro</h3>
+                                                    <div className="flex-1 flex flex-col items-center justify-center">
+                                                        <div className="relative w-40 h-40 rounded-full flex items-center justify-center mb-6 shadow-inner"
+                                                             style={{ background: `conic-gradient(${COLORS.greenOk} ${dashboardStats.percentComplete}%, ${COLORS.softRed} 0)` }}>
+                                                            <div className="absolute w-28 h-28 bg-white rounded-full flex items-center justify-center">
+                                                                <span className="text-2xl font-bold text-slate-700">{dashboardStats.percentComplete}%</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex space-x-6 text-sm font-medium">
+                                                            <div className="flex items-center"><div className="w-4 h-3 rounded-sm mr-2" style={{ backgroundColor: COLORS.greenOk }}></div> Completos</div>
+                                                            <div className="flex items-center"><div className="w-4 h-3 rounded-sm mr-2" style={{ backgroundColor: COLORS.softRed }}></div> Incompletos</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {dashboardStats.isGlobal && (
+                                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
+                                                <p className="text-blue-800 font-medium">Despliega el menú superior para cargar los datos de una tabla de AWS y ver su galería.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="py-16 text-center bg-white rounded-xl border border-slate-200 flex flex-col items-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#de545a] mb-4"></div>
+                                        <h3 className="text-lg font-bold text-slate-800">Cargando datos de AWS RDS...</h3>
+                                    </div>
+                                )}
+
+                                {/* LISTADO DINÁMICO DE LA TABLA */}
+                                {tableFilter && tableData.length > 0 && (
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-8 fade-in">
+                                        
+                                        <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                                            <div className="flex items-center space-x-6 w-full sm:w-auto">
+                                                <div className="relative w-full sm:w-64">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                                        <IconSearch />
+                                                    </div>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Buscar negocio..." 
+                                                        value={tableSearch}
+                                                        onChange={(e) => setTableSearch(e.target.value)}
+                                                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:border-[#de545a] bg-white"
+                                                        style={{ '--tw-ring-color': COLORS.softRed }}
+                                                    />
+                                                </div>
+                                                <label className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-slate-700">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={showOnlyIncomplete}
+                                                        onChange={(e) => setShowOnlyIncomplete(e.target.checked)}
+                                                        className="rounded text-[#de545a] focus:ring-[#de545a] w-4 h-4 cursor-pointer"
+                                                    />
+                                                    <span>Ver solo incompletos</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm border-collapse">
+                                                <thead className="bg-white border-b border-slate-200">
+                                                    <tr>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500 whitespace-nowrap w-24">Estado</th>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500">Nombre del Objeto</th>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500 text-center">Nº Campos a Rellenar</th>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500">% Completado</th>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500">Última Actualización</th>
+                                                        <th className="px-6 py-4 font-semibold text-slate-500 text-center w-20">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {filteredTableData.map((row) => (
+                                                        <tr key={row.id || Math.random()} className="hover:bg-slate-50 transition-colors group">
+                                                            <td className="px-6 py-4">
+                                                                <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                                                                    row._meta.estado === 'OK' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-[#de545a]'
+                                                                }`}>
+                                                                    {row._meta.estado === 'OK' ? <IconCheckCircle /> : <IconAlert />}
+                                                                    <span>{row._meta.estado}</span>
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 font-semibold text-slate-800">{row._meta.nombreValor}</td>
+                                                            <td className="px-6 py-4 text-center text-slate-600 font-medium bg-slate-50/50">{row._meta.numCampos}</td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className="text-slate-700 font-medium w-8">{row._meta.percent}%</span>
+                                                                    <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                                                        <div className="h-1.5 rounded-full" style={{ width: `${row._meta.percent}%`, backgroundColor: row._meta.estado === 'OK' ? COLORS.greenOk : COLORS.softRed }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-slate-500">{row._meta.fechaActualizacion}</td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <button onClick={() => goToForm(row)} className="p-2 text-slate-400 hover:text-[#de545a] hover:bg-red-50 rounded-md transition-colors" title="Editar registro">
+                                                                    <IconEdit />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* PANTALLA 3: FORMULARIO DINÁMICO */}
+                        {currentView === 'detail_form' && selectedRecord && (
+                            <div className="max-w-4xl mx-auto space-y-6 fade-in mt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center space-x-4">
+                                        <button onClick={goBack} className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 shadow-sm"><IconArrowLeft /></button>
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{selectedRecord._meta.nombreValor}</h2>
+                                            <p className="text-sm font-medium text-slate-500 mt-1">Completando datos - {CATEGORY_TRANSLATIONS[tableFilter]}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex space-x-3">
+                                        <button onClick={goBack} className="flex items-center px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
+                                            Cancelar
+                                        </button>
+                                        <button onClick={goBack} className="flex items-center px-5 py-2.5 text-white font-bold rounded-lg shadow-sm transition-all" style={{ backgroundColor: COLORS.softRed }}>
+                                            <span className="mr-2">Guardar AWS</span> <IconSave />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="p-8">
+                                        <form className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                            {/* AQUÍ SE DETECTAN LAS COLUMNAS QUE NO SON INTERNAS */}
+                                            {selectedRecord._meta.editableKeys.map((field) => (
+                                                <div key={field} className={`flex flex-col space-y-2 ${field.length > 30 || field.includes('desc') ? 'md:col-span-2' : ''}`}>
+                                                    <label className="text-sm font-bold text-slate-700 capitalize">{field.replace(/_/g, ' ')}</label>
+                                                    {field.includes('desc') || selectedRecord[field]?.length > 80 ? (
+                                                        <textarea 
+                                                            defaultValue={selectedRecord[field] || ''} 
+                                                            rows="3"
+                                                            placeholder={`Añadir ${field}...`} 
+                                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition-all font-medium text-slate-700"
+                                                            style={{ '--tw-ring-color': COLORS.softRed, '--tw-ring-opacity': '0.3' }}
+                                                        ></textarea>
+                                                    ) : (
+                                                        <input 
+                                                            type="text" 
+                                                            defaultValue={selectedRecord[field] || ''} 
+                                                            placeholder={`Añadir ${field}...`} 
+                                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition-all font-medium text-slate-700"
+                                                            style={{ '--tw-ring-color': COLORS.softRed, '--tw-ring-opacity': '0.3' }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        // ========================================================================
+        // 🔐 INICIO DE SESIÓN
+        // ========================================================================
+        function App() {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [token, setToken] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                try {
+                    const res = await fetch('http://localhost:3000/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setToken(data.token);
+                        setIsAuthenticated(true);
+                    } else {
+                        setError(data.message || 'Error de acceso');
+                    }
+                } catch (err) {
+                    setError('Fallo de conexión. ¿Está encendido el servidor Node.js en la terminal?');
+                }
+            };
+
+            if (!isAuthenticated) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden p-4">
+                        <div className="bg-white p-10 rounded-2xl shadow-xl border border-slate-200 w-full max-w-md relative z-10 fade-in">
+                            <div className="text-center mb-10 flex flex-col items-center">
+                                <img src={LOGO_PATH} alt="Timestamp" className="h-12 mb-6 object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+                                <div style={{display: 'none', color: COLORS.brandRed}} className="text-3xl font-black italic tracking-tighter mb-4">timestamp</div>
+                                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Bienvenido</h2>
+                                <p className="text-slate-500 mt-2 font-medium">Panel de Auditoría de Datos</p>
+                            </div>
+                            {error && ( <div className="bg-rose-50 text-rose-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-start"><span className="mr-2 shrink-0">⚠️</span> {error}</div> )}
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Usuario</label>
+                                    <input type="text" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all font-medium text-slate-800" style={{ '--tw-ring-color': COLORS.softRed, '--tw-ring-opacity': '0.3' }}/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Contraseña</label>
+                                    <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:bg-white transition-all font-medium text-slate-800" style={{ '--tw-ring-color': COLORS.softRed, '--tw-ring-opacity': '0.3' }}/>
+                                </div>
+                                <button type="submit" className="w-full text-white py-3.5 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all mt-4" style={{ backgroundColor: COLORS.softRed }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = COLORS.softRedHover} onMouseOut={(e) => e.currentTarget.style.backgroundColor = COLORS.softRed}>Acceder al Sistema</button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+            return <Dashboard userEmail={email} token={token} onLogout={() => setIsAuthenticated(false)} />;
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timestamp Consulting | Data Quality Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#EB1C23',
+                            50: '#fdf3f3',
+                            100: '#fce4e5',
+                            200: '#f8c2c4',
+                            300: '#f39aa0',
+                            400: '#eb4f58',
+                            500: '#EB1C23',
+                            600: '#d4151a',
+                            700: '#b10f14',
+                            800: '#921014',
+                            900: '#791215',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(235, 28, 35, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #EB1C23;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 relative z-20">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
+            <i class="ph-fill ph-clock-clockwise text-primary text-2xl mr-2"></i>
+            <span class="font-bold text-lg tracking-tight">Timestamp<span class="text-primary">.</span></span>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="app.navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-primary bg-primary-50 dark:bg-primary-900/20 transition-colors">
+                <i class="ph ph-house text-lg mr-3"></i>
+                Home
+            </button>
+            <button onclick="app.navigate('data')" id="nav-data" class="w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                <i class="ph ph-database text-lg mr-3"></i>
+                Gestión de Datos
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="mt-4 flex items-center justify-between px-3">
+                <span class="text-xs text-gray-500">Modo Oscuro</span>
+                <button onclick="app.toggleTheme()" class="text-gray-400 hover:text-primary transition-colors">
+                    <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-10 transition-colors duration-200">
+            <h1 class="text-xl font-semibold" id="header-title">Home</h1>
+            
+            <div class="flex items-center space-x-4">
+                <div id="unsaved-badge" class="hidden items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-medium">
+                    <i class="ph ph-warning-circle mr-1 text-sm"></i>
+                    <span id="unsaved-count">0</span> cambios sin guardar
+                </div>
+                
+                <button onclick="app.saveData()" id="save-btn" class="hidden items-center px-4 py-2 bg-primary hover:bg-primary-600 text-white text-sm font-medium rounded-lg shadow-sm transition-colors opacity-50 cursor-not-allowed">
+                    <i class="ph ph-floppy-disk mr-2"></i>
+                    Guardar Cambios
+                </button>
+                
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-orange-400 text-white flex items-center justify-center font-bold text-sm shadow-sm cursor-pointer ring-2 ring-white dark:ring-gray-800">
+                    TC
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 relative">
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="max-w-6xl mx-auto space-y-6 fade-in">
+                
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-primary to-orange-500 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">Auditoría de Calidad de Datos</h2>
+                        <p class="text-primary-50 max-w-3xl text-sm leading-relaxed">
+                            Bienvenido a la herramienta de limpieza y enriquecimiento de Timestamp Consulting. Aquí puedes visualizar la salud de tu base de datos de negocios, identificar carencias de información (como emails o teléfonos faltantes) y corregirlos directamente para mantener un CRM 100% operativo.
+                        </p>
+                    </div>
+                    <div class="hidden md:flex flex-shrink-0 bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                        <i class="ph ph-shield-check text-4xl"></i>
+                    </div>
+                </div>
+
+                <!-- Category Tags -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-3" id="category-tags-container">
+                    <!-- Generado por JS -->
+                </div>
+
+                <!-- KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Calidad Global</p>
+                                <h3 class="text-3xl font-bold mt-1 text-gray-900 dark:text-white" id="kpi-score">0%</h3>
+                            </div>
+                            <div class="p-2 bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 rounded-lg">
+                                <i class="ph ph-check-circle text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div class="bg-green-500 h-1.5 rounded-full transition-all duration-500" id="kpi-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Registros Incompletos</p>
+                                <h3 class="text-3xl font-bold mt-1 text-primary" id="kpi-incomplete">0</h3>
+                            </div>
+                            <div class="p-2 bg-primary-50 text-primary dark:bg-primary-900/20 rounded-lg">
+                                <i class="ph ph-warning text-xl"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-4"><span id="kpi-action-needed" class="text-primary font-medium">0</span> requieren tu atención</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Negocios</p>
+                                <h3 class="text-3xl font-bold mt-1 text-gray-900 dark:text-white" id="kpi-total">0</h3>
+                            </div>
+                            <div class="p-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg">
+                                <i class="ph ph-buildings text-xl"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-4">En la base de datos actual</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Campos Vacíos</p>
+                                <h3 class="text-3xl font-bold mt-1 text-orange-500" id="kpi-empty-fields">0</h3>
+                            </div>
+                            <div class="p-2 bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 rounded-lg">
+                                <i class="ph ph-cell-signal-none text-xl"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-4">Celdas totales sin información</p>
+                    </div>
+                </div>
+
+                <!-- Charts Area -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-white mb-4">Estado de los Campos</h4>
+                        <div class="h-64 flex items-center justify-center">
+                            <canvas id="fieldsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <h4 class="text-sm font-semibold text-gray-800 dark:text-white mb-4">Completitud por Registro</h4>
+                        <div class="h-64 flex items-center justify-center">
+                            <canvas id="donutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sector Summary -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mt-2">
+                    <h4 class="text-sm font-semibold text-gray-800 dark:text-white mb-4">Resumen de Impacto por Sector</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="sector-summary-container">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table View -->
+            <div id="view-data" class="hidden h-full flex flex-col fade-in">
+                <!-- Toolbar -->
+                <div class="flex flex-wrap items-center justify-between mb-4 gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="search-input" placeholder="Buscar negocio..." class="pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64 transition-shadow text-gray-900 dark:text-gray-100">
+                        </div>
+                        <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                            <input type="checkbox" id="filter-incomplete" class="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800">
+                            <span>Ver solo incompletos</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse whitespace-nowrap text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+                                <tr>
+                                    <th class="py-3 px-4 font-medium">Nombre del Negocio</th>
+                                    <th class="py-3 px-4 font-medium">Nº Campos Totales</th>
+                                    <th class="py-3 px-4 font-medium">% Completado</th>
+                                    <th class="py-3 px-4 font-medium text-center w-24">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Detailed Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col slide-up transform transition-all">
+            
+            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                    <i class="ph ph-pencil-simple text-primary mr-2"></i>
+                    Editar Registro
+                </h3>
+                <button onclick="app.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <form id="edit-form" class="space-y-6">
+                    <input type="hidden" id="modal-id">
+                    
+                    <!-- Section 1 -->
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Información Principal</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Negocio <span class="text-primary">*</span></label>
+                                <input type="text" id="modal-name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sector</label>
+                                <select id="modal-sector" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Tecnología">Tecnología</option>
+                                    <option value="Retail">Retail</option>
+                                    <option value="Salud">Salud</option>
+                                    <option value="Finanzas">Finanzas</option>
+                                    <option value="Servicios">Servicios</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 dark:border-gray-700"></div>
+
+                    <!-- Section 2 -->
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Contacto y Ubicación</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span class="text-primary">*</span></label>
+                                <input type="email" id="modal-email" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                                <input type="tel" id="modal-phone" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección Completa</label>
+                                <input type="text" id="modal-address" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex justify-end space-x-3">
+                <button onclick="app.closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                    Cancelar
+                </button>
+                <button onclick="app.saveModal()" class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-600 rounded-lg shadow-sm transition-colors flex items-center">
+                    <i class="ph ph-check mr-2"></i>
+                    Aplicar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-3"></div>
+
+    <!-- Application Logic -->
+    <script>
+        const app = (() => {
+            // --- Mock Data ---
+            const initialData = [
+                { id: 1, name: "TechNova Solutions", phone: "600123456", email: "contacto@technova.com", address: "Av. Innovación 123, Madrid", sector: "Tecnología" },
+                { id: 2, name: "Global Retailers", phone: "", email: "info@globalretail.com", address: "Calle Mayor 45, Barcelona", sector: "Retail" },
+                { id: 3, name: "MediCare Plus", phone: "611987654", email: "", address: "Plaza Salud 2, Valencia", sector: "Salud" },
+                { id: 4, name: "Finanzas Capital", phone: "622333444", email: "admin@fincapital.es", address: "", sector: "Finanzas" },
+                { id: 5, name: "Servicios Rápidos", phone: "", email: "", address: "Polígono Ind. Nave 4, Sevilla", sector: "Servicios" },
+                { id: 6, name: "Cloud Systems Inc", phone: "633456789", email: "hello@cloudsys.com", address: "Parque Tec. 8, Bilbao", sector: "Tecnología" },
+                { id: 7, name: "EcoFoods SA", phone: "644555666", email: "ventas@ecofoods.es", address: "Camino Agrícola s/n, Murcia", sector: "Retail" },
+                { id: 8, name: "Consultores y Asoc.", phone: "655777888", email: "legal@consultores.es", address: "Av. Constitución 10, Zaragoza", sector: "Servicios" },
+                { id: 9, name: "Clínica Dental Sonrisas", phone: "", email: "citas@sonrisas.com", address: "Calle Dentista 3, Málaga", sector: "Salud" },
+                { id: 10, name: "Boutique Elegance", phone: "677999000", email: "hola@elegance.es", address: "", sector: "Retail" }
+            ];
+
+            // --- State Management ---
+            let state = {
+                data: JSON.parse(JSON.stringify(initialData)), // Deep copy
+                view: 'dashboard',
+                unsavedChanges: 0,
+                searchQuery: '',
+                filterIncomplete: false,
+                charts: {}
+            };
+
+            const fieldsToCheck = ['name', 'phone', 'email', 'address', 'sector'];
+
+            // --- Initialization ---
+            const init = () => {
+                bindEvents();
+                calculateMetrics();
+                renderView(state.view);
+                
+                // Set dark mode based on preference or default
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    toggleTheme(true);
+                }
+            };
+
+            // --- Core Functions ---
+            
+            const isRowComplete = (row) => {
+                return fieldsToCheck.every(field => row[field] && row[field].toString().trim() !== '');
+            };
+
+            const calculateMetrics = () => {
+                const total = state.data.length;
+                let incomplete = 0;
+                let totalEmptyFields = 0;
+                let fieldStats = { name: 0, phone: 0, email: 0, address: 0, sector: 0 };
+                let sectorStats = {};
+
+                state.data.forEach(row => {
+                    const sector = row.sector || 'Sin sector';
+                    if (!sectorStats[sector]) {
+                        sectorStats[sector] = { total: 0, incomplete: 0 };
+                    }
+                    sectorStats[sector].total++;
+
+                    if (!isRowComplete(row)) {
+                        incomplete++;
+                        sectorStats[sector].incomplete++;
+                    }
+                    
+                    fieldsToCheck.forEach(field => {
+                        if (row[field] && row[field].toString().trim() !== '') {
+                            fieldStats[field]++;
+                        } else {
+                            totalEmptyFields++;
+                        }
+                    });
+                });
+
+                const complete = total - incomplete;
+                const percent = total === 0 ? 0 : Math.round((complete / total) * 100);
+
+                // Update DOM with null checks
+                const kpiScore = document.getElementById('kpi-score');
+                if (kpiScore) kpiScore.textContent = `${percent}%`;
+
+                const kpiBar = document.getElementById('kpi-bar');
+                if (kpiBar) {
+                    kpiBar.style.width = `${percent}%`;
+                    if (percent < 50) kpiBar.className = 'bg-primary h-1.5 rounded-full transition-all duration-500';
+                    else if (percent < 80) kpiBar.className = 'bg-amber-400 h-1.5 rounded-full transition-all duration-500';
+                    else kpiBar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-500';
+                }
+
+                const kpiIncomplete = document.getElementById('kpi-incomplete');
+                if (kpiIncomplete) kpiIncomplete.textContent = incomplete;
+
+                const kpiActionNeeded = document.getElementById('kpi-action-needed');
+                if (kpiActionNeeded) kpiActionNeeded.textContent = incomplete;
+
+                const kpiTotal = document.getElementById('kpi-total');
+                if (kpiTotal) kpiTotal.textContent = total;
+                
+                const kpiEmptyFields = document.getElementById('kpi-empty-fields');
+                if (kpiEmptyFields) kpiEmptyFields.textContent = totalEmptyFields;
+
+                // Render Sector Summary
+                const sectorContainer = document.getElementById('sector-summary-container');
+                if (sectorContainer) {
+                    sectorContainer.innerHTML = '';
+                    Object.keys(sectorStats).sort().forEach(sector => {
+                        const stats = sectorStats[sector];
+                        const sectorPercent = Math.round(((stats.total - stats.incomplete) / stats.total) * 100);
+                        
+                        let statusColor = sectorPercent === 100 ? 'text-green-500' : (sectorPercent < 50 ? 'text-primary' : 'text-amber-500');
+                        let statusBg = sectorPercent === 100 ? 'bg-green-500' : (sectorPercent < 50 ? 'bg-primary' : 'bg-amber-400');
+
+                        sectorContainer.innerHTML += `
+                            <div class="p-4 border border-gray-100 dark:border-gray-700 rounded-lg flex flex-col bg-gray-50 dark:bg-gray-800/50">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">${sector}</span>
+                                    <span class="text-xs font-bold ${statusColor}">${sectorPercent}% OK</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-3">
+                                    <div class="${statusBg} h-1.5 rounded-full transition-all duration-500" style="width: ${sectorPercent}%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto">
+                                    <span>${stats.total} registros</span>
+                                    <span class="${stats.incomplete > 0 ? 'text-primary' : ''}">${stats.incomplete} incompletos</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render Category Tags
+                const tagsContainer = document.getElementById('category-tags-container');
+                if (tagsContainer) {
+                    let tagsHtml = '<span class="text-sm font-semibold text-gray-700 dark:text-gray-300 mr-2"><i class="ph ph-tag mr-1"></i>Sectores:</span>';
+                    Object.keys(sectorStats).sort().forEach(sector => {
+                        const stats = sectorStats[sector];
+                        const sectorPercent = Math.round(((stats.total - stats.incomplete) / stats.total) * 100);
+
+                        let tagClass = '';
+                        if (sectorPercent === 100) {
+                            tagClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800';
+                        } else if (sectorPercent < 50) {
+                            tagClass = 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-200 dark:border-primary-800';
+                        } else {
+                            tagClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+                        }
+
+                        tagsHtml += `
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${tagClass} cursor-help transition-transform hover:scale-105" title="${stats.incomplete} registros incompletos de ${stats.total}">
+                                ${sector}
+                                <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-white/50 dark:bg-black/20 text-[10px] font-bold">
+                                    ${sectorPercent}%
+                                </span>
+                            </span>
+                        `;
+                    });
+                    tagsContainer.innerHTML = tagsHtml;
+                }
+
+                return { total, incomplete, complete, fieldStats };
+            };
+
+            // --- Navigation & Rendering ---
+            
+            const navigate = (view) => {
+                state.view = view;
+                renderView(view);
+            };
+
+            const renderView = (view) => {
+                // Update Sidebar
+                ['dashboard', 'data'].forEach(v => {
+                    const el = document.getElementById(`nav-${v}`);
+                    if (v === view) {
+                        el.className = 'w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-primary bg-primary-50 dark:bg-primary-900/20 transition-colors';
+                    } else {
+                        el.className = 'w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors';
+                    }
+                });
+
+                // Hide all views
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-data').classList.add('hidden');
+
+                // Show target view & update header
+                const headerTitle = document.getElementById('header-title');
+                
+                if (view === 'dashboard') {
+                    document.getElementById('view-dashboard').classList.remove('hidden');
+                    headerTitle.textContent = 'Home';
+                    renderCharts();
+                } else if (view === 'data') {
+                    document.getElementById('view-data').classList.remove('hidden');
+                    headerTitle.textContent = 'Gestión de Datos';
+                    renderTable();
+                }
+            };
+
+            // --- Charts (Chart.js) ---
+            
+            const renderCharts = () => {
+                const metrics = calculateMetrics();
+                
+                // Common chart options for dark mode compatibility
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#9ca3af' : '#6b7280';
+                const gridColor = isDark ? '#374151' : '#f3f4f6';
+
+                Chart.defaults.color = textColor;
+                Chart.defaults.font.family = 'Inter';
+
+                // Bar Chart (Fields)
+                const ctxFields = document.getElementById('fieldsChart');
+                if (!ctxFields) return;
+
+                if (state.charts.fields) state.charts.fields.destroy();
+                
+                state.charts.fields = new Chart(ctxFields.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Nombre', 'Teléfono', 'Email', 'Dirección', 'Sector'],
+                        datasets: [{
+                            label: 'Campos Completados',
+                            data: [
+                                metrics.fieldStats.name,
+                                metrics.fieldStats.phone,
+                                metrics.fieldStats.email,
+                                metrics.fieldStats.address,
+                                metrics.fieldStats.sector
+                            ],
+                            backgroundColor: '#EB1C23',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                max: metrics.total,
+                                grid: { color: gridColor }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+
+                // Donut Chart (Completeness)
+                const ctxDonut = document.getElementById('donutChart');
+                if (!ctxDonut) return;
+
+                if (state.charts.donut) state.charts.donut.destroy();
+
+                state.charts.donut = new Chart(ctxDonut.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completos', 'Incompletos'],
+                        datasets: [{
+                            data: [metrics.complete, metrics.incomplete],
+                            backgroundColor: ['#22c55e', '#f87171'],
+                            borderWidth: 0,
+                            cutout: '75%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            };
+
+            // --- Table Logic ---
+
+            const renderTable = () => {
+                const tbody = document.getElementById('table-body');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                let filteredData = state.data.filter(row => {
+                    const matchesSearch = Object.values(row).some(val => 
+                        val && val.toString().toLowerCase().includes(state.searchQuery.toLowerCase())
+                    );
+                    const matchesFilter = state.filterIncomplete ? !isRowComplete(row) : true;
+                    return matchesSearch && matchesFilter;
+                });
+
+                if (filteredData.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-gray-500">
+                                <i class="ph ph-magnifying-glass text-4xl mb-2 text-gray-300 dark:text-gray-600"></i>
+                                <p>No se encontraron registros que coincidan con la búsqueda.</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                filteredData.forEach(row => {
+                    let filledCount = 0;
+                    fieldsToCheck.forEach(field => {
+                        if (row[field] && row[field].toString().trim() !== '') {
+                            filledCount++;
+                        }
+                    });
+                    const totalFields = fieldsToCheck.length;
+                    const percentage = Math.round((filledCount / totalFields) * 100);
+
+                    let statusColor = percentage === 100 ? 'bg-green-500' : (percentage < 50 ? 'bg-primary' : 'bg-amber-400');
+                    let textStatusColor = percentage === 100 ? 'text-green-600 dark:text-green-400' : (percentage < 50 ? 'text-primary' : 'text-amber-500');
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group';
+
+                    tr.innerHTML = `
+                        <td class="py-4 px-4 font-medium text-gray-900 dark:text-gray-200">
+                            ${row.name || '<span class="text-gray-400 italic">Sin nombre asignado</span>'}
+                        </td>
+                        <td class="py-4 px-4 text-gray-600 dark:text-gray-400">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                ${totalFields} campos
+                            </span>
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center space-x-3 max-w-[200px]">
+                                <span class="text-sm font-bold ${textStatusColor} w-10">${percentage}%</span>
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="${statusColor} h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <button onclick="app.openModal(${row.id})" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                                <i class="ph ph-pencil-simple mr-1.5"></i>
+                                Editar
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            };
+
+            // --- State Mutations ---
+
+            const registerChange = () => {
+                state.unsavedChanges++;
+                updateHeaderUI();
+                calculateMetrics();
+            };
+
+            const updateHeaderUI = () => {
+                const badge = document.getElementById('unsaved-badge');
+                const count = document.getElementById('unsaved-count');
+                const btn = document.getElementById('save-btn');
+
+                if (state.unsavedChanges > 0) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                    count.textContent = state.unsavedChanges;
+                    
+                    btn.classList.remove('hidden', 'opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                    
+                    btn.classList.add('hidden');
+                }
+            };
+
+            const saveData = () => {
+                if (state.unsavedChanges === 0) return;
+
+                const btn = document.getElementById('save-btn');
+                const originalHtml = btn.innerHTML;
+                
+                // Loading state
+                btn.innerHTML = `<div class="spinner mr-2"></div> Guardando...`;
+                btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+                // Simulate API Call (Replace this with AWS logic later)
+                setTimeout(() => {
+                    state.unsavedChanges = 0;
+                    updateHeaderUI();
+                    showToast('¡Datos guardados correctamente!', 'success');
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                    
+                    // If we are on dashboard, update charts to reflect saved reality
+                    if (state.view === 'dashboard') renderCharts();
+                }, 800);
+            };
+
+            // --- Modal Logic ---
+
+            const openModal = (id) => {
+                const row = state.data.find(r => r.id === id);
+                if (!row) return;
+
+                document.getElementById('modal-id').value = row.id;
+                document.getElementById('modal-name').value = row.name || '';
+                document.getElementById('modal-sector').value = row.sector || '';
+                document.getElementById('modal-email').value = row.email || '';
+                document.getElementById('modal-phone').value = row.phone || '';
+                document.getElementById('modal-address').value = row.address || '';
+
+                const modal = document.getElementById('detail-modal');
+                modal.classList.remove('hidden');
+            };
+
+            const closeModal = () => {
+                document.getElementById('detail-modal').classList.add('hidden');
+            };
+
+            const saveModal = () => {
+                const id = parseInt(document.getElementById('modal-id').value);
+                const row = state.data.find(r => r.id === id);
+                
+                if (!row) return;
+
+                const name = document.getElementById('modal-name').value;
+                const email = document.getElementById('modal-email').value;
+
+                // Validation
+                if (!name.trim()) {
+                    showToast('El nombre es obligatorio', 'error');
+                    return;
+                }
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showToast('Email inválido', 'error');
+                    return;
+                }
+
+                let changed = false;
+                
+                ['name', 'sector', 'email', 'phone', 'address'].forEach(field => {
+                    const newVal = document.getElementById(`modal-${field}`).value;
+                    if (row[field] !== newVal) {
+                        row[field] = newVal;
+                        changed = true;
+                    }
+                });
+
+                if (changed) {
+                    registerChange();
+                    if (state.view === 'data') renderTable();
+                }
+
+                closeModal();
+                showToast('Registro actualizado', 'success');
+            };
+
+            // --- UI Utilities ---
+
+            const showToast = (message, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                let bgColor = 'bg-gray-800 dark:bg-gray-700';
+                let icon = 'ph-info';
+                let iconColor = 'text-blue-400';
+
+                if (type === 'success') {
+                    icon = 'ph-check-circle';
+                    iconColor = 'text-green-400';
+                } else if (type === 'error') {
+                    icon = 'ph-x-circle';
+                    iconColor = 'text-red-400';
+                }
+
+                toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 slide-up text-sm font-medium`;
+                toast.innerHTML = `
+                    <i class="ph-fill ${icon} ${iconColor} text-lg"></i>
+                    <span>${message}</span>
+                `;
+
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(10px)';
+                    toast.style.transition = 'all 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            };
+
+            const toggleTheme = (forceDark = null) => {
+                const html = document.documentElement;
+                const icon = document.getElementById('theme-icon');
+                
+                let isDark;
+                if (forceDark !== null) {
+                    isDark = forceDark;
+                } else {
+                    isDark = !html.classList.contains('dark');
+                }
+
+                if (isDark) {
+                    html.classList.add('dark');
+                    icon.classList.replace('ph-moon', 'ph-sun');
+                } else {
+                    html.classList.remove('dark');
+                    icon.classList.replace('ph-sun', 'ph-moon');
+                }
+                
+                // Re-render charts to update colors
+                if (state.view === 'dashboard') renderCharts();
+            };
+
+            // --- Event Binders ---
+            const bindEvents = () => {
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    state.searchQuery = e.target.value;
+                    renderTable();
+                });
+
+                document.getElementById('filter-incomplete').addEventListener('change', (e) => {
+                    state.filterIncomplete = e.target.checked;
+                    renderTable();
+                });
+                
+                // Close modal on background click
+                document.getElementById('detail-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'detail-modal') closeModal();
+                });
+            };
+
+            // Public API
+            return {
+                init,
+                navigate,
+                openModal,
+                closeModal,
+                saveModal,
+                saveData,
+                toggleTheme
+            };
+        })();
+
+        // Initialize application when DOM is ready
+        document.addEventListener('DOMContentLoaded', app.init);
+    </script>
+</body>
+</html>
