@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timestamp Consulting | Demo Dashboard</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Timestamp Consulting | Demo Data Quality</title>
+
+    <!-- 🎨 CONFIGURACIÓN DE TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', 
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         primary: {
-                            DEFAULT: '#EB1C23', 50: '#fdf3f3', 100: '#fce4e5', 200: '#f8c2c4',
-                            300: '#f39aa0', 400: '#eb4f58', 500: '#EB1C23', 600: '#d4151a',
-                            700: '#b10f14', 800: '#921014', 900: '#791215',
+                            DEFAULT: '#EB1C23',
+                            50: '#fdf3f3', 100: '#fce4e5', 200: '#f8c2c4',
+                            300: '#f39aa0', 400: '#eb4f58', 500: '#EB1C23',
+                            600: '#d4151a', 700: '#b10f14', 800: '#921014', 900: '#791215',
                         },
-                        navy: { dark: '#1b212c' } 
+                        navy: { 
+                            dark: '#2a3241'
+                        }
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -29,14 +33,14 @@
         }
     </script>
 
-    <!-- React & Librerías -->
+    <!-- ⚙️ LIBRERÍAS EXTERNAS -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -44,72 +48,85 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        .slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+        
+        .pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Estilos para el redimensionamiento de columnas */
+        .resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: rgba(0,0,0,0.03);
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+            transition: background 0.2s;
+        }
+        .dark .resizer { background: rgba(255,255,255,0.03); }
+        .resizer:hover, .resizer.is-resizing {
+            background: #EB1C23;
+            width: 4px;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
-    
+
     <div id="root" class="h-full flex flex-col"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
         const LOGO_PATH = "./assets/logo-red.svg";
+        const BADAJOZ_LOGO_PATH = "./assets/badajoz.svg";
 
-        const EXCLUDED_FIELDS = ['id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app', 'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid', 'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'];
+        const EXCLUDED_FIELDS = [
+            'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app', 'accessibility_level',
+            'accessibility_description', 'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid',
+            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'
+        ].map(f => f.toLowerCase());
 
         const CATEGORY_TRANSLATIONS = {
-            "accessible_poi": "Punto de Interés Accesible", "alojamientos": "Alojamientos", "archeological_site": "Sitio Arqueológico",
-            "atm": "Cajero Automático", "audio_guide": "Audioguía", "beach": "Playa", "bike_lane": "Carril Bici",
-            "bridge": "Puente", "castle": "Castillo", "church": "Iglesia", "complementary_activities_company": "Actividades Complementarias",
-            "destination_experience": "Experiencia en Destino", "educational_centre": "Centro Educativo", "equestrian_club": "Club Hípico",
-            "event": "Evento", "fire_station": "Estación de Bomberos", "garden": "Jardín", "gas_station": "Gasolinera",
-            "historical_or_cultural_resource": "Recurso Histórico o Cultural", "image_360": "Imagen 360", "leisure_and_culture_facility": "Instalación de Ocio y Cultura",
-            "medical_service": "Servicio Médico", "miscellaneous_service": "Servicios Misceláneos", "monument": "Monumento",
-            "municipio_ref": "Referencia de Municipio", "museum": "Museo", "natural_park": "Parque Natural", "natural_view_point": "Mirador Natural",
-            "offer": "Oferta", "pamphlet": "Folleto", "pharmacy": "Farmacia", "photography": "Fotografía", "police_station": "Comisaría de Policía",
-            "primary_care": "Atención Primaria", "restaurantes": "Restaurantes", "route": "Ruta", "shopping_mall": "Centro Comercial",
-            "sport_facility": "Instalación Deportiva", "supermarket": "Supermercado", "tour_guide": "Guía Turístico",
-            "tourism_destination": "Destino Turístico", "tourist_attraction_site": "Atracción Turística", "tourist_information_office": "Oficina de Turismo",
-            "town_hall": "Ayuntamiento", "traditional_market": "Mercado Tradicional", "trail": "Sendero", "travel_agency": "Agencia de Viajes",
-            "trivia_question": "Pregunta de Trivial", "vehicle_experience": "Experiencia en Vehículo", "vehicle_workshop": "Taller de Vehículos",
-            "vernacular_architecture": "Arquitectura Vernácula", "video_360": "Video 360", "video_media": "Medio de Video",
-            "virtual_visit": "Visita Virtual", "wifi_point": "Punto WiFi", "winery": "Bodega"
+            "alojamientos": "Alojamientos", "restaurantes": "Restaurantes", "museum": "Museos",
+            "monument": "Monumentos", "event": "Eventos", "beach": "Playas",
+            "archeological_site": "Sitios Arqueológicos", "nature_park": "Parques Naturales",
+            "tourist_office": "Oficinas de Turismo", "shopping": "Zonas Comerciales"
         };
 
-        const getSolidColor = (percent) => {
-            if (percent <= 30) return '#EB1C23'; 
-            if (percent >= 100) return '#10b981'; 
+        const getSolidColor = (percent, isDark) => {
+            if (percent <= 30) return isDark ? '#f87171' : '#dc2626'; 
+            if (percent >= 100) return isDark ? '#34d399' : '#059669'; 
             const hue = ((percent - 30) / 70) * 120;
-            return `hsl(${hue}, 80%, 45%)`;
+            return `hsl(${hue}, ${isDark ? '40%' : '50%'}, ${isDark ? '55%' : '45%'})`;
         };
 
-        const getPastelColor = (percent) => {
-            if (percent <= 30) return 'rgba(235, 28, 35, 0.15)'; 
-            if (percent >= 100) return 'rgba(16, 185, 129, 0.15)'; 
+        const getPastelColor = (percent, isDark) => {
+            if (percent <= 30) return isDark ? 'rgba(248, 113, 113, 0.08)' : 'rgba(220, 38, 38, 0.04)';
+            if (percent >= 100) return isDark ? 'rgba(52, 211, 153, 0.08)' : 'rgba(5, 150, 105, 0.04)';
             const hue = ((percent - 30) / 70) * 120;
-            return `hsla(${hue}, 80%, 45%, 0.15)`;
+            return `hsla(${hue}, ${isDark ? '35%' : '40%'}, 50%, ${isDark ? '0.12' : '0.06'})`;
         };
 
-        // ========================================================================
-        // 🚀 COMPONENTE DASHBOARD (VERSIÓN DEMO)
-        // ========================================================================
         function Dashboard({ userEmail, onLogout }) {
             const [isDark, setIsDark] = useState(true);
-            const [currentView, setCurrentView] = useState('dashboard'); 
-            const [tableFilter, setTableFilter] = useState(''); 
-            const [summaryData, setSummaryData] = useState([]); 
-            
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [tableFilter, setTableFilter] = useState('');
+            const [selectedRecord, setSelectedRecord] = useState(null);
+            const [summaryData, setSummaryData] = useState([]);
             const [tableData, setTableData] = useState([]);
             const [tableSearch, setTableSearch] = useState('');
             const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
             const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-            
-            const [selectedRecord, setSelectedRecord] = useState(null);
+            const [nameWidth, setNameWidth] = useState(260);
+            const isResizing = useRef(false);
 
             const donutChartRef = useRef(null);
             const donutChartInstance = useRef(null);
@@ -119,650 +136,391 @@
                 else document.documentElement.classList.remove('dark');
             }, [isDark]);
 
-            // --- SIMULACIÓN DE DATOS (Sustituye al Fetch de AWS) ---
+            // SIMULACIÓN DE CARGA INICIAL
             useEffect(() => {
-                // Simulamos la carga de estadísticas generales
                 setTimeout(() => {
                     setSummaryData([
-                        { name: "alojamientos", total: 4530, complete: 3100, incomplete: 1430 },
-                        { name: "restaurantes", total: 2890, complete: 2890, incomplete: 0 },
-                        { name: "museum", total: 112, complete: 50, incomplete: 62 },
-                        { name: "tourist_information_office", total: 45, complete: 40, incomplete: 5 },
-                        { name: "monument", total: 850, complete: 300, incomplete: 550 },
-                        { name: "event", total: 120, complete: 20, incomplete: 100 },
-                        { name: "beach", total: 8, complete: 8, incomplete: 0 }
+                        { name: "alojamientos", total: 450, complete: 310 },
+                        { name: "restaurantes", total: 280, complete: 280 },
+                        { name: "museum", total: 112, complete: 50 },
+                        { name: "monument", total: 850, complete: 300 },
+                        { name: "event", total: 120, complete: 20 },
+                        { name: "beach", total: 8, complete: 8 },
+                        { name: "archeological_site", total: 45, complete: 15 }
                     ]);
-                }, 600);
+                }, 500);
             }, []);
 
+            // SIMULACIÓN DE CARGA DE TABLA
             useEffect(() => {
-                // Simulamos la carga de una tabla específica
                 if (tableFilter) {
-                    setTableData([]); 
-                    setSortConfig({ key: null, direction: 'asc' }); 
-                    
+                    setTableData([]);
                     setTimeout(() => {
                         const mockRows = Array.from({ length: 45 }).map((_, i) => {
                             const isComplete = Math.random() > 0.4;
                             return {
-                                id: 1000 + i,
-                                nombre: `Elemento de Prueba ${i + 1} - ${CATEGORY_TRANSLATIONS[tableFilter] || tableFilter}`,
-                                direccion_fisica: isComplete ? `Calle de Ejemplo ${i + 1}, Badajoz` : '',
-                                telefono_contacto: isComplete || Math.random() > 0.5 ? `+34 600 11 22 3${i%10}` : '',
-                                correo_electronico: isComplete ? `info${i}@ejemplo.es` : '',
-                                descripcion_turistica: isComplete ? `Este es un texto de prueba que simula una descripción muy larga traída desde la base de datos de AWS para el negocio número ${i}.` : '',
-                                latitud: '38.8794',
-                                longitud: '-6.9706',
+                                id: `aws-${1000 + i}`,
+                                nombre: `${CATEGORY_TRANSLATIONS[tableFilter] || 'Activo'} #${i + 1} - Badajoz Centro`,
+                                direccion: isComplete ? `Av. de Europa, ${i + 5}, Badajoz` : '',
+                                telefono: isComplete || Math.random() > 0.6 ? `+34 924 10 20 ${i < 10 ? '0'+i : i}` : '',
+                                email: isComplete ? `contacto@turismo-badajoz-${i}.es` : '',
+                                long_description: isComplete ? "Esta es una descripción enriquecida que contiene múltiples detalles sobre el activo turístico, su historia, horarios de apertura y recomendaciones para visitantes. Se extrae directamente del repositorio S3 de AWS para auditoría." : "",
+                                latitud: "38.8794",
+                                longitud: "-6.9706",
                                 fecha_actualizacion: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString()
                             };
                         });
                         setTableData(mockRows);
-                    }, 800);
-                } else {
-                    setTableData([]);
+                    }, 600);
                 }
             }, [tableFilter]);
 
-            // --- RESTO DE LA LÓGICA (IDÉNTICA A LA REAL) ---
             const dashboardStats = useMemo(() => {
                 if (!tableFilter) {
-                    if(summaryData.length === 0) return null;
+                    if (summaryData.length === 0) return null;
                     const total = summaryData.reduce((acc, cat) => acc + cat.total, 0);
-                    return { total, complete: 'N/A', incomplete: 'N/A', percentComplete: 'N/A', isGlobal: true };
+                    const complete = summaryData.reduce((acc, cat) => acc + cat.complete, 0);
+                    return { total, complete, incomplete: total - complete, percentComplete: Math.round((complete / total) * 100), isGlobal: true };
                 } else {
-                    if(tableData.length === 0) return null;
-                    let total = tableData.length;
-                    let incompleteRows = 0;
-
+                    if (tableData.length === 0) return null;
+                    const total = tableData.length;
+                    let incompleteCount = 0;
                     tableData.forEach(row => {
-                        const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
-                        let isRowIncomplete = false;
-                        editableKeys.forEach(k => {
-                            const val = row[k];
-                            const hasValue = val !== null && val !== undefined && val.toString().trim() !== '';
-                            if (!hasValue) isRowIncomplete = true;
-                        });
-                        if (isRowIncomplete) incompleteRows++;
+                        const keys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k));
+                        if (keys.some(k => !row[k] || row[k].toString().trim() === '')) incompleteCount++;
                     });
-
-                    const completeRows = total - incompleteRows;
-                    const percent = total === 0 ? 0 : Math.round((completeRows / total) * 100);
-
-                    let fieldStatsMap = {};
-                    tableData.forEach(row => {
-                        Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase())).forEach(k => {
-                            if (!fieldStatsMap[k]) fieldStatsMap[k] = 0;
-                            const val = row[k];
-                            if (val !== null && val !== undefined && val.toString().trim() !== '') fieldStatsMap[k]++;
-                        });
-                    });
-
-                    const fieldStats = Object.keys(fieldStatsMap)
-                        .map(k => ({ name: k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' '), count: fieldStatsMap[k] }))
-                        .sort((a,b) => b.count - a.count);
-
-                    return { total, complete: completeRows, incomplete: incompleteRows, percentComplete: percent, fieldStats, isGlobal: false };
+                    const complete = total - incompleteCount;
+                    return { total, complete, incomplete: incompleteCount, percentComplete: Math.round((complete / total) * 100), isGlobal: false };
                 }
             }, [summaryData, tableData, tableFilter]);
 
             const processedRows = useMemo(() => {
-                let dynamicCols = []; 
-                const rows = tableData.map(row => {
+                return tableData.map(row => {
                     const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
-                    if (dynamicCols.length === 0) dynamicCols = editableKeys.slice(0, 5);
-
-                    let isRowIncomplete = false;
                     let filledCount = 0;
+                    let missingFieldsCount = 0;
                     editableKeys.forEach(k => {
-                        const val = row[k];
-                        if (val !== null && val !== undefined && val.toString().trim() !== '') filledCount++;
-                        else isRowIncomplete = true;
+                        if (row[k] && row[k].toString().trim() !== '') filledCount++;
+                        else missingFieldsCount++;
                     });
-
-                    const numCampos = editableKeys.length;
-                    const percent = numCampos === 0 ? 100 : Math.round((filledCount / numCampos) * 100);
-                    const nombreValor = row.nombre || row.name || row.titulo || row.title || `Registro #${row.id || '-'}`;
-                    
-                    let fechaActualizacion = "Sin registro";
-                    if (row.fecha_actualizacion) { try { fechaActualizacion = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES'); } catch(e){} } 
-
-                    return { ...row, _meta: { nombreValor, numCampos, percent, editableKeys, isComplete: !isRowIncomplete, fechaActualizacion } };
+                    const percent = Math.round((filledCount / editableKeys.length) * 100);
+                    const fechaMod = row.fecha_actualizacion ? new Date(row.fecha_actualizacion).toLocaleDateString('es-ES') : '---';
+                    return { ...row, _meta: { nombreValor: row.nombre, missingFieldsCount, percent, editableKeys, fechaMod, isComplete: missingFieldsCount === 0 } };
                 });
-                return { rows, dynamicCols };
             }, [tableData]);
 
-            const handleSort = (key) => {
-                let direction = 'asc';
-                if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
-                setSortConfig({ key, direction });
-            };
-
             const filteredAndSortedRows = useMemo(() => {
-                let result = processedRows.rows.filter(row => {
+                let result = processedRows.filter(row => {
                     const matchesSearch = row._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase());
                     const matchesIncomplete = showOnlyIncomplete ? !row._meta.isComplete : true;
                     return matchesSearch && matchesIncomplete;
                 });
-
                 if (sortConfig.key) {
                     result.sort((a, b) => {
-                        let aVal = a._meta[sortConfig.key] !== undefined ? a._meta[sortConfig.key] : a[sortConfig.key];
-                        let bVal = b._meta[sortConfig.key] !== undefined ? b._meta[sortConfig.key] : b[sortConfig.key];
+                        let aVal = a._meta[sortConfig.key] ?? a[sortConfig.key];
+                        let bVal = b._meta[sortConfig.key] ?? b[sortConfig.key];
                         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
                         if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-                        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-                        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-                        return 0;
+                        return sortConfig.direction === 'asc' ? (aVal < bVal ? -1 : 1) : (aVal > bVal ? -1 : 1);
                     });
                 }
                 return result;
-            }, [processedRows.rows, tableSearch, showOnlyIncomplete, sortConfig]);
+            }, [processedRows, tableSearch, showOnlyIncomplete, sortConfig]);
 
-            // --- EXPORTACIONES EXCEL ---
-            const exportTableToExcel = () => {
-                if (!tableFilter || filteredAndSortedRows.length === 0) return;
-                const wb = XLSX.utils.book_new(); 
-                const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "EB1C23" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
-                const okStyle = { font: { bold: true, color: { rgb: "10B981" } }, alignment: { horizontal: "center" } };
-                const reviewStyle = { font: { bold: true, color: { rgb: "EB1C23" } }, alignment: { horizontal: "center" } };
-                const centerStyle = { alignment: { horizontal: "center" } };
-                const boldStyle = { font: { bold: true } };
-
-                const headers = ["ESTADO", "PROGRESO", "NOMBRE / REFERENCIA", ...filteredAndSortedRows[0]._meta.editableKeys.map(c => c.replace(/_/g, ' ').toUpperCase())];
-                const wsData = [headers.map(h => ({ v: h, t: 's', s: headerStyle }))];
-
-                filteredAndSortedRows.forEach(r => {
-                    const row = [{ v: r._meta.isComplete ? "OK" : "Revisar", t: 's', s: r._meta.isComplete ? okStyle : reviewStyle }, { v: r._meta.percent + "%", t: 's', s: centerStyle }, { v: r._meta.nombreValor, t: 's', s: boldStyle }];
-                    r._meta.editableKeys.forEach(c => { row.push({ v: r[c] || "", t: 's' }); });
-                    wsData.push(row);
-                });
-
-                const ws1 = XLSX.utils.aoa_to_sheet(wsData);
-                ws1['!autofilter'] = { ref: `A1:${XLSX.utils.encode_col(headers.length - 1)}${wsData.length}` };
-                ws1['!freeze'] = { xSplit: 3, ySplit: 1 }; 
-                const cols = [{ wch: 15 }, { wch: 15 }, { wch: 45 }];
-                for(let i=3; i<headers.length; i++) cols.push({ wch: 30 });
-                ws1['!cols'] = cols;
-                XLSX.utils.book_append_sheet(wb, ws1, "Datos_Físicos");
-
-                const statsData = [
-                    [{ v: "Métrica de Calidad", t: 's', s: headerStyle }, { v: "Valor Actual", t: 's', s: headerStyle }],
-                    [{ v: "Categoría / Tabla AWS", t: 's', s: boldStyle }, { v: CATEGORY_TRANSLATIONS[tableFilter] || tableFilter, t: 's' }],
-                    [{ v: "Total de Negocios Extraídos", t: 's', s: boldStyle }, { v: dashboardStats.total, t: 'n' }],
-                    [{ v: "Negocios 100% Completos", t: 's', s: boldStyle }, { v: dashboardStats.complete, t: 'n' }],
-                    [{ v: "Negocios Incompletos (A revisar)", t: 's', s: boldStyle }, { v: dashboardStats.incomplete, t: 'n' }],
-                    [{ v: "Porcentaje de Calidad Global", t: 's', s: boldStyle }, { v: dashboardStats.percentComplete + "%", t: 's', s: okStyle }]
-                ];
-                const ws2 = XLSX.utils.aoa_to_sheet(statsData);
-                ws2['!cols'] = [{ wch: 35 }, { wch: 25 }];
-                XLSX.utils.book_append_sheet(wb, ws2, "Estadísticas_Calidad");
-
-                XLSX.writeFile(wb, `DEMO_Auditoria_${tableFilter}.xlsx`);
-            };
-
-            const exportImportTemplate = () => {
-                if (!tableFilter || processedRows.rows.length === 0) return;
-                const wb = XLSX.utils.book_new();
-                const sTitle = { font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 }, fill: { fgColor: { rgb: "F97316" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sSub = { font: { italic: true, color: { rgb: "333333" } }, fill: { fgColor: { rgb: "FEF3C7" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sHeadLocked = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "374151" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sHeadEditable = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "10B981" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sCellLocked = { fill: { fgColor: { rgb: "F3F4F6" } }, border: { top: {style:'thin', color:{rgb:'D1D5DB'}}, bottom: {style:'thin', color:{rgb:'D1D5DB'}}, left: {style:'thin', color:{rgb:'D1D5DB'}}, right: {style:'thin', color:{rgb:'D1D5DB'}} } };
-                const sCellEditable = { fill: { fgColor: { rgb: "ECFDF5" } }, border: { top: {style:'thin', color:{rgb:'10B981'}}, bottom: {style:'thin', color:{rgb:'10B981'}}, left: {style:'thin', color:{rgb:'10B981'}}, right: {style:'thin', color:{rgb:'10B981'}} } };
-
-                const incompleteRecords = processedRows.rows.filter(r => !r._meta.isComplete);
-                if (incompleteRecords.length === 0) { alert("¡Genial! No hay datos incompletos en esta categoría para exportar."); return; }
-
-                const wsData = [
-                    [{ v: "PLANTILLA DE IMPORTACIÓN AWS - " + (CATEGORY_TRANSLATIONS[tableFilter] || tableFilter).toUpperCase(), t: 's', s: sTitle }],
-                    [{ v: "Rellene las celdas en verde. NO modifique la columna ID_AWS, es necesaria para la sincronización automática.", t: 's', s: sSub }],
-                    []
-                ];
-
-                const editableKeys = incompleteRecords[0]._meta.editableKeys;
-                const headerRow = [{ v: "ID_AWS", t: 's', s: sHeadLocked }, { v: "NOMBRE_REFERENCIA", t: 's', s: sHeadLocked }];
-                editableKeys.forEach(k => headerRow.push({ v: k.toUpperCase(), t: 's', s: sHeadEditable }));
-                wsData.push(headerRow);
-
-                incompleteRecords.forEach(r => {
-                    const rowData = [{ v: r.id || "N/A", t: 's', s: sCellLocked }, { v: r._meta.nombreValor, t: 's', s: sCellLocked }];
-                    editableKeys.forEach(k => { rowData.push({ v: r[k] || "", t: 's', s: sCellEditable }); });
-                    wsData.push(rowData);
-                });
-
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                ws['!merges'] = [ { s: { r: 0, c: 0 }, e: { r: 0, c: editableKeys.length + 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: editableKeys.length + 1 } } ];
-                ws['!freeze'] = { xSplit: 2, ySplit: 4 }; 
-                const cols = [{ wch: 10 }, { wch: 45 }];
-                editableKeys.forEach(() => cols.push({ wch: 35 }));
-                ws['!cols'] = cols;
-
-                XLSX.utils.book_append_sheet(wb, ws, "Importacion_AWS");
-                XLSX.writeFile(wb, `DEMO_Plantilla_${tableFilter}.xlsx`);
-            };
-
-            const exportFormToExcel = () => {
-                if (!selectedRecord) return;
-                const wb = XLSX.utils.book_new();
-                const sTitle = { font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 }, fill: { fgColor: { rgb: "EB1C23" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sSub = { font: { italic: true, color: { rgb: "333333" } }, fill: { fgColor: { rgb: "FEF3C7" } }, alignment: { horizontal: "center", vertical: "center" }, border: { bottom: { style: 'thin', color: { rgb: "D1D5DB" } } } };
-                const sInfoTitle = { font: { bold: true, color: { rgb: "4B5563" } }, alignment: { horizontal: "right" } };
-                const sInfoData = { font: { bold: true, color: { rgb: "111827" } }, alignment: { horizontal: "left" } };
-                const sHeadCol1 = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1F2937" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sHeadCol2 = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4B5563" } }, alignment: { horizontal: "center", vertical: "center" } };
-                const sHeadCol3 = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "10B981" } }, alignment: { horizontal: "center", vertical: "center" } }; 
-                const sField = { font: { bold: true, color: { rgb: "374151" } }, fill: { fgColor: { rgb: "F3F4F6" } }, border: { top: {style:'thin', color:{rgb:'E5E7EB'}}, bottom: {style:'thin', color:{rgb:'E5E7EB'}} }, alignment: { vertical: "center", wrapText: true } };
-                const sReadOnly = { font: { color: { rgb: "6B7280" } }, fill: { fgColor: { rgb: "FAFAFA" } }, border: { top: {style:'thin', color:{rgb:'E5E7EB'}}, bottom: {style:'thin', color:{rgb:'E5E7EB'}} }, alignment: { vertical: "center", wrapText: true } };
-                const sEditable = { fill: { fgColor: { rgb: "ECFDF5" } }, border: { top: {style:'medium', color:{rgb:'10B981'}}, bottom: {style:'medium', color:{rgb:'10B981'}}, left: {style:'medium', color:{rgb:'10B981'}}, right: {style:'medium', color:{rgb:'10B981'}} }, alignment: { vertical: "center", wrapText: true } };
-
-                const wsData = [
-                    [{ v: "TIMESTAMP DATA CONSULTING - FORMULARIO DE ACTUALIZACIÓN", t: 's', s: sTitle }, null, null],
-                    [{ v: "Instrucciones: Revise los datos y escriba la información faltante únicamente en la columna verde 'NUEVO VALOR'.", t: 's', s: sSub }, null, null],
-                    [],
-                    [{ v: "Nombre del Registro:", t: 's', s: sInfoTitle }, { v: selectedRecord._meta.nombreValor, t: 's', s: sInfoData }, null],
-                    [{ v: "ID en Sistema AWS:", t: 's', s: sInfoTitle }, { v: selectedRecord.id || "N/A", t: 's', s: sInfoData }, null],
-                    [],
-                    [{ v: "CAMPO FÍSICO", t: 's', s: sHeadCol1 }, { v: "VALOR ACTUAL EN AWS", t: 's', s: sHeadCol2 }, { v: "NUEVO VALOR (Escriba aquí 👇)", t: 's', s: sHeadCol3 }]
-                ];
-                
-                selectedRecord._meta.editableKeys.forEach(k => {
-                    wsData.push([{ v: k.replace(/_/g, ' ').toUpperCase(), t: 's', s: sField }, { v: selectedRecord[k] || "--- VACÍO ---", t: 's', s: sReadOnly }, { v: "", t: 's', s: sEditable }]);
-                });
-                
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                ws['!merges'] = [ { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } } ];
-                ws['!cols'] = [{ wch: 30 }, { wch: 60 }, { wch: 60 }]; 
-                ws['!freeze'] = { xSplit: 0, ySplit: 7 };
-
-                XLSX.utils.book_append_sheet(wb, ws, "Hoja_de_Trabajo");
-                XLSX.writeFile(wb, `DEMO_Ficha_${selectedRecord._meta.nombreValor.replace(/[^a-z0-9]/gi, '_')}.xlsx`);
-            };
-
-            // --- CHART ---
-            useEffect(() => {
-                const destroyCharts = () => {
-                    if (donutChartInstance.current) { donutChartInstance.current.destroy(); donutChartInstance.current = null; }
+            // REDIMENSIONAMIENTO
+            const startResizing = (e) => {
+                isResizing.current = true;
+                const startX = e.pageX;
+                const startWidth = nameWidth;
+                const onMouseMove = (me) => {
+                    if (!isResizing.current) return;
+                    setNameWidth(Math.max(120, startWidth + (me.pageX - startX)));
                 };
+                const onMouseUp = () => {
+                    isResizing.current = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            };
 
-                if (currentView !== 'dashboard' || !dashboardStats || dashboardStats.total === 0 || dashboardStats.isGlobal) { destroyCharts(); return; }
+            const autoResize = () => {
+                if (filteredAndSortedRows.length === 0) return;
+                const longest = filteredAndSortedRows.reduce((a, b) => a._meta.nombreValor.length > b._meta.nombreValor.length ? a : b);
+                setNameWidth(Math.min(500, (longest._meta.nombreValor.length * 8) + 40));
+            };
 
-                const textColor = isDark ? '#9ca3af' : '#6b7280';
-                Chart.defaults.color = textColor;
-                Chart.defaults.font.family = 'Inter';
-
-                if (donutChartRef.current) {
+            useEffect(() => {
+                if (currentView !== 'dashboard' || !dashboardStats) return;
+                const ctx = donutChartRef.current;
+                if (ctx) {
                     if (donutChartInstance.current) donutChartInstance.current.destroy();
-                    donutChartInstance.current = new Chart(donutChartRef.current, {
+                    donutChartInstance.current = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
                             labels: ['Completos', 'Incompletos'],
                             datasets: [{
-                                data: [dashboardStats.complete, dashboardStats.incomplete],
-                                backgroundColor: ['#10b981', '#EB1C23'],
-                                borderWidth: 0, cutout: '75%'
+                                data: [dashboardStats.complete === 'N/A' ? 50 : dashboardStats.complete, dashboardStats.incomplete === 'N/A' ? 50 : dashboardStats.incomplete],
+                                backgroundColor: [isDark ? '#34d399' : '#059669', isDark ? '#f87171' : '#dc2626'],
+                                borderWidth: 0, cutout: '80%'
                             }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                     });
                 }
-                return destroyCharts; 
             }, [dashboardStats, isDark, currentView]);
 
-            const sortedCategories = Object.entries(CATEGORY_TRANSLATIONS).sort((a, b) => a[1].localeCompare(b[1]));
-
-            const renderSortIcon = (key) => {
-                if (sortConfig.key !== key) return <i className="ph ph-arrows-down-up ml-1 text-gray-400 opacity-50 group-hover:opacity-100"></i>;
-                return sortConfig.direction === 'asc' 
-                    ? <i className="ph-bold ph-arrow-up ml-1 text-primary"></i> 
-                    : <i className="ph-bold ph-arrow-down ml-1 text-primary"></i>;
-            };
-
-            const renderKPICards = () => {
-                if (!dashboardStats) return null;
-                return (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Calidad de Datos {dashboardStats.isGlobal ? '(Selecciona Tabla)' : ''}</p>
-                                    <h3 className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-                                        {dashboardStats.isGlobal ? '---' : `${dashboardStats.percentComplete}%`}
-                                    </h3>
-                                </div>
-                                <div className={`p-2 rounded-lg ${!dashboardStats.isGlobal && dashboardStats.percentComplete === 100 ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-50 text-gray-400 dark:bg-gray-700'}`}>
-                                    <i className="ph-fill ph-check-circle text-xl"></i>
-                                </div>
-                            </div>
-                            {!dashboardStats.isGlobal && (
-                                <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                    <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${dashboardStats.percentComplete}%`, backgroundColor: getSolidColor(dashboardStats.percentComplete) }}></div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Registros Incompletos</p>
-                                    <h3 className="text-3xl font-bold mt-1 text-primary">{dashboardStats.isGlobal ? '---' : dashboardStats.incomplete.toLocaleString()}</h3>
-                                </div>
-                                <div className="p-2 bg-primary-50 text-primary dark:bg-primary-900/20 rounded-lg">
-                                    <i className="ph-fill ph-warning text-xl"></i>
-                                </div>
-                            </div>
-                            {!dashboardStats.isGlobal && <p className="text-sm text-gray-500 mt-4"><span className="text-primary font-medium">{dashboardStats.incomplete}</span> requieren atención</p>}
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Extraídos (AWS)</p>
-                                    <h3 className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">{dashboardStats.total.toLocaleString()}</h3>
-                                </div>
-                                <div className="p-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg">
-                                    <i className="ph-fill ph-buildings text-xl"></i>
-                                </div>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-4">En {dashboardStats.isGlobal ? 'todas las tablas (Simulado)' : 'la categoría seleccionada'}</p>
-                        </div>
-                    </div>
-                );
-            };
+            const sortedSummary = useMemo(() => {
+                return [...summaryData]
+                    .map(cat => ({ ...cat, percent: Math.round((cat.complete / cat.total) * 100) }))
+                    .sort((a, b) => b.percent - a.percent);
+            }, [summaryData]);
 
             return (
                 <div className="flex flex-col h-screen">
-                    <header className="h-16 bg-navy-dark border-b-[4px] border-primary flex items-center justify-between px-6 z-30 shrink-0 shadow-sm">
-                        <div className="flex items-center space-x-6">
-                            <div className="flex items-center space-x-4">
-                                <img src={LOGO_PATH} alt="Timestamp Logo" className="h-8 object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
-                                <div style={{display: 'none'}} className="text-primary text-2xl font-black italic tracking-tighter">timestamp</div>
-                                <span className="ml-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-md">VERSIÓN DEMO</span>
+                    <header className="h-14 bg-navy-dark border-b-[3px] border-primary flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
+                        <div className="flex items-center space-x-5">
+                            <div className="flex items-center space-x-3">
+                                <img src={BADAJOZ_LOGO_PATH} alt="Badajoz" className="h-7 object-contain dark:invert" />
+                                <img src={LOGO_PATH} alt="Timestamp" className="h-7 object-contain" />
                             </div>
-                            <div className="h-8 w-px bg-gray-700 hidden sm:block"></div>
-                            <div className="flex flex-col justify-center hidden sm:flex">
-                                <div className="flex items-baseline space-x-2 font-serif">
-                                    <span className="text-xl font-bold text-white tracking-wide">Consultor de datos turísticos Badajoz</span>
-                                </div>
-                            </div>
+                            <div className="h-6 w-px bg-slate-500 hidden sm:block"></div>
+                            <span className="text-sm font-bold text-white font-serif tracking-tight hidden sm:block uppercase">Auditoría Digital de Activos · Badajoz</span>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm font-medium text-gray-300">
-                            <div className="flex items-center space-x-2 bg-gray-800 px-4 py-1.5 rounded-full border border-gray-700">
-                                <i className="ph ph-user text-lg"></i>
-                                <span>{userEmail ? userEmail.split('@')[0] : 'Admin'}</span>
-                                <button onClick={onLogout} className="ml-2 hover:text-white transition-colors" title="Cerrar sesión">
-                                    <i className="ph ph-sign-out text-lg"></i>
-                                </button>
+                        <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-2 bg-slate-600/40 px-3 py-1 rounded-full border border-slate-500/50 text-[11px] text-gray-200">
+                                <i className="ph-fill ph-user-circle text-lg"></i>
+                                <span className="font-bold">{userEmail || 'Demo User'}</span>
+                                <button onClick={onLogout} className="ml-1 hover:text-white transition-all"><i className="ph ph-power text-lg"></i></button>
                             </div>
                         </div>
                     </header>
 
-                    <div className="flex-1 flex overflow-hidden relative">
-                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200 z-20 shrink-0">
-                            <nav className="flex-1 p-4 space-y-1 mt-4">
-                                <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}>
-                                    <i className="ph ph-house text-lg mr-3"></i> Home
-                                </button>
-                                <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}>
-                                    <i className="ph ph-database text-lg mr-3"></i> Gestión de Datos
-                                </button>
-                            </nav>
-                            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                                <div className="mt-4 flex items-center justify-between px-3">
-                                    <span className="text-xs text-gray-500 font-medium">Modo Oscuro</span>
-                                    <button onClick={() => setIsDark(!isDark)} className="text-gray-400 hover:text-primary transition-colors">
-                                        {isDark ? <i className="ph-fill ph-moon text-xl"></i> : <i className="ph ph-sun text-xl"></i>}
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* SIDEBAR */}
+                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-20 shrink-0">
+                            <div className="p-4 space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center ml-1">
+                                        <i className="ph-fill ph-funnel mr-2 text-primary"></i> Contexto
+                                    </label>
+                                    <select 
+                                        className="w-full py-2 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] font-bold outline-none transition-all"
+                                        value={tableFilter} 
+                                        onChange={(e) => { setTableFilter(e.target.value); if(e.target.value) setCurrentView('data'); }}>
+                                        <option value="">Vista Global</option>
+                                        {Object.entries(CATEGORY_TRANSLATIONS).map(([key, val]) => (
+                                            <option key={key} value={key}>{val}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
+                                <nav className="space-y-1">
+                                    <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                        <i className="ph ph-house-line text-lg mr-3"></i> Home
+                                    </button>
+                                    <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                        <i className="ph ph-database text-lg mr-3"></i> Gestión de Datos
+                                    </button>
+                                </nav>
+                            </div>
+                            <div className="mt-auto p-4 border-t border-gray-100 dark:border-gray-700">
+                                <div className="flex items-center justify-between px-2">
+                                    <span className="text-[10px] text-gray-400 font-black uppercase">Apariencia</span>
+                                    <button onClick={() => setIsDark(!isDark)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary transition-all">
+                                        {isDark ? <i className="ph-fill ph-moon text-lg"></i> : <i className="ph ph-sun text-lg"></i>}
                                     </button>
                                 </div>
                             </div>
                         </aside>
 
-                        <main className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 relative">
-                            <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                                <div className="text-gray-800 dark:text-white font-semibold flex items-center">
-                                    <i className="ph-fill ph-funnel text-primary mr-2 text-xl"></i> Contexto de Datos (Simulados)
-                                </div>
-                                <select 
-                                    className="py-2.5 px-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-800 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-primary transition-all cursor-pointer min-w-[280px] text-sm"
-                                    value={tableFilter}
-                                    onChange={(e) => {
-                                        setTableFilter(e.target.value);
-                                        if(e.target.value && currentView === 'dashboard') setCurrentView('data'); 
-                                    }}
-                                >
-                                    <option value="">Vista Global de AWS...</option>
-                                    {sortedCategories.map(([key, value]) => (
-                                        <option key={key} value={key}>{value}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* VISTA 1: DASHBOARD */}
+                        <main className="flex-1 overflow-y-auto p-6 bg-gray-50/30 dark:bg-gray-900/40 transition-all custom-scrollbar">
                             {currentView === 'dashboard' && dashboardStats && (
-                                <div className="max-w-6xl mx-auto space-y-6 fade-in">
-                                    <div className="bg-gradient-to-r from-rose-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 border border-rose-100 dark:border-gray-700">
-                                        <div>
-                                            <h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">Auditoría de Calidad de Datos</h2>
-                                            <p className="text-gray-600 dark:text-gray-300 max-w-3xl text-sm leading-relaxed">
-                                                Bienvenido a la herramienta de limpieza y enriquecimiento. Aquí puedes visualizar la salud de la base de datos de <strong>Consultor de datos turísticos Badajoz</strong>, identificar carencias de información física y descargar plantillas para completar tu ecosistema de datos de AWS.
-                                            </p>
-                                        </div>
-                                        <div className="hidden md:flex flex-shrink-0 bg-white/50 dark:bg-gray-700 p-3 rounded-lg backdrop-blur-sm text-primary shadow-sm border border-rose-100 dark:border-gray-600">
-                                            <i className="ph ph-shield-check text-4xl"></i>
+                                <div className="max-w-5xl mx-auto space-y-6 fade-in">
+                                    {/* EXPLICACIÓN ENRIQUECIDA */}
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32"></div>
+                                        <h2 className="text-2xl font-black mb-4 tracking-tight">Centro de Excelencia de Datos</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
+                                            <p>Esta plataforma centraliza la monitorización y enriquecimiento de los activos turísticos de <strong>Badajoz</strong>. El motor de auditoría escanea en tiempo real los registros para asegurar que la información promocional cumpla con los estándares de calidad internacional.</p>
+                                            <p>Localice registros con información incompleta, descargue plantillas de corrección masiva y optimice la presencia digital de su destino. Un ecosistema de datos íntegro es el primer paso hacia una promoción turística inteligente.</p>
                                         </div>
                                     </div>
 
-                                    {renderKPICards()}
-
-                                    {!dashboardStats.isGlobal && dashboardStats.total > 0 && (
-                                        <div className="max-w-md mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
-                                            <h4 className="text-sm font-semibold text-gray-800 dark:text-white mb-6">Completitud de la Tabla</h4>
-                                            <div className="h-64 flex items-center justify-center relative">
+                                    {/* INDICADORES CON ICONO DERECHA */}
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row items-center gap-10">
+                                        <div className="w-full lg:w-1/4 flex flex-col items-center">
+                                            <div className="relative h-40 w-40">
                                                 <canvas ref={donutChartRef}></canvas>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-6">
-                                                    <span className="text-3xl font-bold text-gray-800 dark:text-white">{dashboardStats.percentComplete}%</span>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                    <span className="text-3xl font-black">{dashboardStats.percentComplete}%</span>
                                                 </div>
                                             </div>
+                                            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud de la Red</span>
                                         </div>
-                                    )}
-
-                                    {dashboardStats.isGlobal && summaryData.length > 0 && (
-                                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mt-2">
-                                            <h4 className="text-base font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                                                <i className="ph-fill ph-circles-four mr-2 text-primary"></i> Estado por Categorías (Datos Demo)
-                                            </h4>
-                                            <div className="flex flex-wrap gap-3">
-                                                {[...summaryData].sort((a,b) => b.total - a.total).map(cat => {
-                                                    const sectorPercent = cat.total === 0 ? 0 : Math.round((cat.complete / cat.total) * 100);
-                                                    const solidColor = getSolidColor(sectorPercent);
-                                                    const pastelColor = getPastelColor(sectorPercent);
-                                                    return (
-                                                        <button 
-                                                            key={cat.name} 
-                                                            className="relative group flex items-center px-4 py-2 border border-opacity-50 rounded-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer dark:border-opacity-30" 
-                                                            style={{ backgroundColor: pastelColor, borderColor: solidColor }}
-                                                            onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
-                                                        >
-                                                            <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 mr-3 truncate max-w-[200px]">
-                                                                {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
-                                                            </span>
-                                                            <span className="text-xs font-black px-2 py-1 rounded-full text-white shadow-sm" style={{ backgroundColor: solidColor }}>
-                                                                {sectorPercent}%
-                                                            </span>
-                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-max px-4 py-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-2xl z-50 pointer-events-none border border-gray-700 dark:border-gray-600">
-                                                                <div className="flex flex-col gap-1 text-center">
-                                                                    <span className="font-bold text-sm mb-1 text-gray-100">{CATEGORY_TRANSLATIONS[cat.name] || cat.name}</span>
-                                                                    <span className="text-gray-300">Registros Totales: <span className="font-bold text-white">{cat.total}</span></span>
-                                                                    <span className="text-red-400">Datos Faltantes: <span className="font-bold text-red-300">{cat.incomplete}</span></span>
-                                                                </div>
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
-                                                            </div>
-                                                        </button>
-                                                    );
-                                                })}
+                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Calidad</div>
+                                                    <div className="text-2xl font-black">{dashboardStats.percentComplete}%</div>
+                                                </div>
+                                                <i className="ph-fill ph-shield-check text-primary text-2xl opacity-70"></i>
+                                            </div>
+                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-primary">Incompletos</div>
+                                                    <div className="text-2xl font-black text-primary">{dashboardStats.incomplete.toLocaleString()}</div>
+                                                </div>
+                                                <i className="ph-fill ph-warning-circle text-primary text-2xl opacity-70"></i>
+                                            </div>
+                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-blue-500">Total Extraídos</div>
+                                                    <div className="text-2xl font-black">{dashboardStats.total.toLocaleString()}</div>
+                                                </div>
+                                                <i className="ph-fill ph-database text-blue-500 text-2xl opacity-70"></i>
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* PILDORAS ORDENADAS POR % */}
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
+                                            <i className="ph-fill ph-circles-four mr-2 text-primary text-xl"></i> Jerarquía de Completitud Física
+                                        </h4>
+                                        <div className="flex flex-wrap gap-3">
+                                            {sortedSummary.map(cat => (
+                                                <button key={cat.name} onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
+                                                    className="pill-transition flex items-center px-4 py-2 rounded-2xl border border-opacity-10 hover:shadow-lg transition-all group"
+                                                    style={{ backgroundColor: getPastelColor(cat.percent, isDark), borderColor: isDark ? getSolidColor(cat.percent, isDark) : 'transparent' }}>
+                                                    <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 mr-3 group-hover:text-primary transition-all">
+                                                        {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
+                                                    </span>
+                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg text-white" style={{ backgroundColor: getSolidColor(cat.percent, isDark) }}>{cat.percent}%</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
-                            {/* VISTA 2: GESTIÓN DE DATOS */}
-                            {currentView === 'data' && (
-                                <div className="max-w-[1600px] mx-auto h-full flex flex-col fade-in">
-                                    {!tableFilter ? (
-                                        <div className="py-20 text-center flex flex-col items-center">
-                                            <div className="bg-gray-200 dark:bg-gray-800 p-5 rounded-full mb-4">
-                                                <i className="ph ph-database text-5xl text-gray-400"></i>
+                            {currentView === 'data' && tableFilter && (
+                                <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-4">
+                                    <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative w-80">
+                                                <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                                <input type="text" placeholder="Localizar registro..." value={tableSearch} onChange={e=>setTableSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-gray-100 dark:border-gray-600 rounded-xl text-xs bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-primary/20 font-semibold" />
                                             </div>
-                                            <h3 className="text-xl font-bold text-gray-800 dark:text-white">Esperando selección</h3>
-                                            <p className="text-gray-500 dark:text-gray-400 max-w-md mt-2">Utiliza el menú superior para elegir una tabla de AWS y auditar sus datos al detalle.</p>
+                                            <label className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-400 cursor-pointer">
+                                                <input type="checkbox" checked={showOnlyIncomplete} onChange={e=>setShowOnlyIncomplete(e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                                                <span>Faltantes</span>
+                                            </label>
                                         </div>
-                                    ) : (
-                                        <>
-                                            {renderKPICards()}
+                                        <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95">
+                                            <i className="ph-bold ph-file-xls mr-2 text-lg"></i> Exportar Auditoría
+                                        </button>
+                                    </div>
 
-                                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                                                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-                                                    <div className="relative flex-1 lg:w-80">
-                                                        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Buscar por nombre o referencia..." 
-                                                            value={tableSearch}
-                                                            onChange={(e) => setTableSearch(e.target.value)}
-                                                            className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-gray-900 dark:text-gray-100"
-                                                        />
-                                                    </div>
-                                                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer bg-gray-50 dark:bg-gray-900 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg whitespace-nowrap hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={showOnlyIncomplete} 
-                                                            onChange={(e) => setShowOnlyIncomplete(e.target.checked)}
-                                                            className="rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800 w-4 h-4 cursor-pointer"
-                                                        />
-                                                        <span>Mostrar Incompletos</span>
-                                                    </label>
-                                                </div>
-                                                <div className="flex gap-2 w-full lg:w-auto">
-                                                    <button onClick={exportTableToExcel} className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
-                                                        <i className="ph-bold ph-microsoft-excel-logo mr-2 text-lg"></i> Excel Analítico
-                                                    </button>
-                                                    <button onClick={exportImportTemplate} className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-lg shadow-sm transition-colors">
-                                                        <i className="ph-bold ph-download-simple mr-2 text-lg"></i> Plantilla Importación
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
-                                                <div className="overflow-x-auto flex-1 custom-scrollbar">
-                                                    <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
-                                                        <thead className="bg-gray-50 dark:bg-gray-900/80 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm select-none">
-                                                            <tr>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group" onClick={() => handleSort('isComplete')}>
-                                                                    <div className="flex items-center">Estado {renderSortIcon('isComplete')}</div>
-                                                                </th>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group" onClick={() => handleSort('nombreValor')}>
-                                                                    <div className="flex items-center">Nombre del Objeto {renderSortIcon('nombreValor')}</div>
-                                                                </th>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group" onClick={() => handleSort('numCampos')}>
-                                                                    <div className="flex items-center justify-center">Nº Campos {renderSortIcon('numCampos')}</div>
-                                                                </th>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs w-48 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group" onClick={() => handleSort('percent')}>
-                                                                    <div className="flex items-center">Progreso Físico {renderSortIcon('percent')}</div>
-                                                                </th>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group" onClick={() => handleSort('fechaActualizacion')}>
-                                                                    <div className="flex items-center justify-center">Última Act. {renderSortIcon('fechaActualizacion')}</div>
-                                                                </th>
-                                                                <th className="py-4 px-6 font-bold uppercase tracking-wider text-xs text-center">Acción</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                                                            {filteredAndSortedRows.map((row) => {
-                                                                const solidColor = getSolidColor(row._meta.percent);
-                                                                return (
-                                                                    <tr key={row.id || Math.random()} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group">
-                                                                        <td className="py-4 px-6">
-                                                                            <span className={`inline-flex items-center justify-center space-x-1 px-3 py-1 rounded-full text-xs font-bold w-24 ${row._meta.isComplete ? 'text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800' : 'text-primary bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800'}`}>
-                                                                                {row._meta.isComplete ? <i className="ph-bold ph-check"></i> : <i className="ph-bold ph-warning"></i>}
-                                                                                <span>{row._meta.isComplete ? 'OK' : 'Revisar'}</span>
-                                                                            </span>
-                                                                        </td>
-                                                                        <td className="py-4 px-6 font-bold text-gray-900 dark:text-gray-100 truncate max-w-md">
-                                                                            {row._meta.nombreValor}
-                                                                        </td>
-                                                                        <td className="py-4 px-6 text-center">
-                                                                            <span className="font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md border border-gray-200 dark:border-gray-600">
-                                                                                {row._meta.numCampos}
-                                                                            </span>
-                                                                        </td>
-                                                                        <td className="py-4 px-6">
-                                                                            <div className="flex items-center space-x-3">
-                                                                                <span className="font-bold w-9 text-right" style={{ color: solidColor }}>{row._meta.percent}%</span>
-                                                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden shadow-inner">
-                                                                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${row._meta.percent}%`, backgroundColor: solidColor }}></div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="py-4 px-6 text-center text-gray-500 dark:text-gray-400 font-medium">
-                                                                            {row._meta.fechaActualizacion}
-                                                                        </td>
-                                                                        <td className="py-4 px-6 text-center">
-                                                                            <button onClick={() => setSelectedRecord(row)} className="inline-flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary" title="Ver detalle">
-                                                                                <i className="ph-bold ph-eye text-lg"></i>
-                                                                            </button>
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            })}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col">
+                                        <div className="overflow-x-auto h-full custom-scrollbar">
+                                            <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-900/70 text-gray-400 font-black uppercase text-[10px] tracking-widest sticky top-0 z-10 backdrop-blur-md">
+                                                    <tr>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer" onClick={()=>handleSort('isComplete')}>Estado</th>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 relative group" style={{ width: nameWidth }}>
+                                                            <div className="cursor-pointer" onClick={()=>handleSort('nombreValor')}>Nombre</div>
+                                                            <div className={`resizer ${isResizing.current ? 'is-resizing' : ''}`} onMouseDown={startResizing} onDoubleClick={autoResize} title="Doble clic para autoajustar"></div>
+                                                        </th>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center cursor-pointer" onClick={()=>handleSort('missingFieldsCount')}>Faltantes</th>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer" onClick={()=>handleSort('percent')}>Progreso</th>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center cursor-pointer" onClick={()=>handleSort('fechaMod')}>Última Mod.</th>
+                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center">Detalle</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                                                    {filteredAndSortedRows.map(row => (
+                                                        <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all group">
+                                                            <td className="py-2 px-4">
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black ${row._meta.isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-50 text-primary dark:bg-red-900/30'}`}>
+                                                                    {row._meta.isComplete ? 'ÓPTIMO' : 'REVISAR'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-2 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>{row._meta.nombreValor}</td>
+                                                            <td className="py-2 px-4 text-center">
+                                                                <span className="font-bold text-gray-400">{row._meta.missingFieldsCount} campos</span>
+                                                            </td>
+                                                            <td className="py-2 px-4 w-40">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex-1 h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                                                        <div className="h-full transition-all duration-700" style={{ width: `${row._meta.percent}%`, backgroundColor: getSolidColor(row._meta.percent, isDark) }}></div>
+                                                                    </div>
+                                                                    <span className="text-[10px] font-black w-6 text-right" style={{ color: getSolidColor(row._meta.percent, isDark) }}>{row._meta.percent}%</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-2 px-4 text-center text-gray-400 font-medium">{row._meta.fechaMod}</td>
+                                                            <td className="py-2 px-4 text-center">
+                                                                <button onClick={() => setSelectedRecord(row)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:text-primary transition-all active:scale-90 shadow-sm"><i className="ph-bold ph-eye text-lg"></i></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </main>
-
                     </div>
 
-                    {/* MODAL SOLO LECTURA + FORMULARIO DESCARGABLE INDIVIDUAL */}
+                    {/* MODAL DETALLE (4/6 ANCHO) */}
                     {selectedRecord && (
-                        <div className="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/90 backdrop-blur-sm z-50 flex items-center justify-center fade-in p-4">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col slide-up transform transition-all border border-gray-200 dark:border-gray-700 overflow-hidden">
-                                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                                            <i className="ph-fill ph-eye text-primary mr-3 text-2xl"></i> Detalles del Objeto
-                                        </h3>
-                                        <p className="text-sm font-medium text-gray-500 mt-1 ml-9">Mostrando estado físico actual de: <span className="text-gray-800 dark:text-gray-300 font-bold">{selectedRecord._meta.nombreValor}</span></p>
+                        <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-6 fade-in">
+                            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-[66%] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
+                                <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><i className="ph-fill ph-database text-2xl"></i></div>
+                                        <div>
+                                            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white leading-none">{selectedRecord._meta.nombreValor}</h3>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Atributos AWS | {selectedRecord.id}</p>
+                                        </div>
                                     </div>
-                                    <button onClick={() => setSelectedRecord(null)} className="p-2 text-gray-400 hover:text-primary hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                                        <i className="ph-bold ph-x text-xl"></i>
-                                    </button>
+                                    <button onClick={() => setSelectedRecord(null)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-2xl text-gray-500 hover:text-primary transition-all"><i className="ph-bold ph-x text-xl"></i></button>
                                 </div>
-                                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-gray-800">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {selectedRecord._meta.editableKeys.map((field) => {
-                                            const val = selectedRecord[field];
-                                            const isLong = field.length > 30 || field.includes('desc') || field.includes('url') || (val && val.length > 50);
-                                            return (
-                                                <div key={field} className={isLong ? 'md:col-span-2' : ''}>
-                                                    <label className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1.5 capitalize">{field.replace(/_/g, ' ')}</label>
-                                                    <div className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 break-words shadow-sm text-sm">
-                                                        {val ? val : <span className="italic text-gray-400 dark:text-gray-500">--- Dato Vacío ---</span>}
+                                <div className="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-white dark:bg-gray-800 custom-scrollbar">
+                                    {selectedRecord._meta.editableKeys.map(key => {
+                                        const val = selectedRecord[key];
+                                        const isDescription = key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || (val && val.length > 120);
+                                        return (
+                                            <div key={key} className={`${isDescription ? 'md:col-span-2 lg:col-span-3' : ''} space-y-1.5`}>
+                                                <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1">{key.replace(/_/g, ' ')}</label>
+                                                {isDescription ? (
+                                                    <div className="p-5 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[250px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
+                                                        {val || 'Sin contenido detallado en AWS.'}
                                                     </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
+                                                ) : (
+                                                    <div className="p-3.5 bg-gray-50/50 dark:bg-gray-900/50 rounded-xl text-xs border border-gray-100 dark:border-gray-700/50 font-bold truncate shadow-inner">
+                                                        {val || <span className="font-normal italic text-gray-400 opacity-50">Dato faltante</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-wrap justify-between items-center gap-4">
-                                    <button onClick={() => setSelectedRecord(null)} className="px-6 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm w-full sm:w-auto">
-                                        Cerrar Visor
-                                    </button>
-                                    <button onClick={exportFormToExcel} className="px-6 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-md transition-colors flex items-center justify-center w-full sm:w-auto">
-                                        <i className="ph-bold ph-microsoft-excel-logo mr-2 text-lg"></i> Descargar Formulario de Edición
-                                    </button>
+                                <div className="p-8 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                            <div className="h-full transition-all duration-1000" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
+                                        </div>
+                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% Completitud</span>
+                                    </div>
+                                    <div className="flex gap-3 w-full sm:w-auto">
+                                        <button onClick={() => setSelectedRecord(null)} className="flex-1 sm:flex-none px-6 py-3 text-[10px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">Cerrar</button>
+                                        <button onClick={exportFormToExcel} className="flex-1 sm:flex-none px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-[11px] font-black flex items-center justify-center shadow-lg active:scale-95 transition-all">
+                                            <i className="ph-bold ph-microsoft-excel-logo mr-2 text-xl"></i> Descargar Enriquecimiento
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -771,53 +529,28 @@
             );
         }
 
-        // ========================================================================
-        // 🔐 PANTALLA DE LOGIN DEMO
-        // ========================================================================
         function App() {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-
             useEffect(() => { document.documentElement.classList.add('dark'); }, []);
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                // Login simulado inmediato
-                setTimeout(() => { setIsAuthenticated(true); }, 500);
-            };
-
             if (!isAuthenticated) {
                 return (
-                    <div className="h-full flex items-center justify-center relative overflow-hidden bg-gray-50 dark:bg-gray-900 p-4">
-                        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full opacity-10 blur-3xl pointer-events-none bg-primary"></div>
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[30vw] h-[30vw] rounded-full opacity-5 blur-3xl pointer-events-none bg-blue-500"></div>
-                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[2rem] shadow-xl border border-gray-100 dark:border-gray-700 w-full max-w-md relative z-10 fade-in">
-                            <div className="text-center mb-10 flex flex-col items-center">
-                                <img src={LOGO_PATH} alt="Timestamp" className="h-12 mb-6 object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
-                                <div style={{display: 'none'}} className="text-3xl font-black italic tracking-tighter mb-4 text-primary">timestamp</div>
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Bienvenido</h2>
-                                <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Versión Demo (Sin Backend)</p>
-                            </div>
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 ml-1">Usuario</label>
-                                    <input type="text" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Introduce cualquier cosa" className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all text-gray-900 dark:text-white"/>
-                                </div>
-                                <button type="submit" className="w-full text-white bg-primary hover:bg-primary-600 py-3.5 rounded-xl font-bold text-lg shadow-sm transition-all mt-4 flex justify-center items-center">
-                                    <i className="ph-bold ph-sign-in mr-2"></i> Acceder a la Demo
-                                </button>
-                            </form>
+                    <div className="h-full flex items-center justify-center bg-gray-900 p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-primary rounded-full blur-[200px] opacity-[0.05] -mr-96 -mt-96"></div>
+                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl w-full max-w-md relative z-10 border border-white/5 flex flex-col items-center">
+                            <img src={LOGO_PATH} alt="Timestamp" className="h-10 mx-auto mb-8" />
+                            <h2 className="text-2xl font-black tracking-tight text-white mb-2 uppercase">Modo Demo</h2>
+                            <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em] mb-10">Data Quality Auditor</p>
+                            <button onClick={()=>setIsAuthenticated(true)} className="w-full bg-primary hover:bg-primary-600 text-white py-4 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95">Acceder al Panel</button>
                         </div>
                     </div>
                 );
             }
-
-            return <Dashboard userEmail={email} onLogout={() => setIsAuthenticated(false)} />;
+            return <Dashboard userEmail="DemoUser@timestamp.es" onLogout={() => setIsAuthenticated(false)} />;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
+
 </html>

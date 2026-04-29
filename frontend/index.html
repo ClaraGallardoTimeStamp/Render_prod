@@ -20,7 +20,9 @@
                             300: '#f39aa0', 400: '#eb4f58', 500: '#EB1C23',
                             600: '#d4151a', 700: '#b10f14', 800: '#921014', 900: '#791215',
                         },
-                        navy: { dark: '#1b212c' }
+                        navy: {
+                            dark: '#2a3241'
+                        }
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -35,37 +37,118 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        .slide-up { animation: slideUp 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .pill-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
+        .pill-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Estilos para el redimensionamiento de columnas */
+        .resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+            transition: background 0.2s;
+        }
+
+        .dark .resizer {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .resizer:hover,
+        .resizer.is-resizing {
+            background: #EB1C23;
+            width: 4px;
+        }
     </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
+<body
+    class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
 
     <div id="root" class="h-full flex flex-col"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // 📍 CONFIGURACIONES
         const LOGO_PATH = "./assets/logo-red.svg";
         const BADAJOZ_LOGO_PATH = "./assets/badajoz.svg";
 
@@ -95,17 +178,17 @@
         };
 
         const getSolidColor = (percent, isDark) => {
-            if (percent <= 30) return isDark ? '#f87171' : '#dc2626'; 
-            if (percent >= 100) return isDark ? '#34d399' : '#059669'; 
+            if (percent <= 30) return isDark ? '#f87171' : '#dc2626';
+            if (percent >= 100) return isDark ? '#34d399' : '#059669';
             const hue = ((percent - 30) / 70) * 120;
-            return `hsl(${hue}, ${isDark ? '45%' : '50%'}, ${isDark ? '60%' : '40%'})`;
+            return `hsl(${hue}, ${isDark ? '40%' : '50%'}, ${isDark ? '55%' : '45%'})`;
         };
 
         const getPastelColor = (percent, isDark) => {
-            if (percent <= 30) return isDark ? 'rgba(248, 113, 113, 0.12)' : 'rgba(220, 38, 38, 0.05)';
-            if (percent >= 100) return isDark ? 'rgba(52, 211, 153, 0.12)' : 'rgba(5, 150, 105, 0.05)';
+            if (percent <= 30) return isDark ? 'rgba(248, 113, 113, 0.08)' : 'rgba(220, 38, 38, 0.04)';
+            if (percent >= 100) return isDark ? 'rgba(52, 211, 153, 0.08)' : 'rgba(5, 150, 105, 0.04)';
             const hue = ((percent - 30) / 70) * 120;
-            return `hsla(${hue}, ${isDark ? '40%' : '45%'}, 50%, ${isDark ? '0.15' : '0.07'})`;
+            return `hsla(${hue}, ${isDark ? '35%' : '40%'}, 50%, ${isDark ? '0.12' : '0.06'})`;
         };
 
         function Dashboard({ userEmail, token, onLogout }) {
@@ -119,6 +202,10 @@
             const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
             const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
+            // Estado para el ancho de la columna Nombre
+            const [nameWidth, setNameWidth] = useState(240);
+            const isResizing = useRef(false);
+
             const donutChartRef = useRef(null);
             const donutChartInstance = useRef(null);
 
@@ -131,7 +218,7 @@
                 fetch('http://localhost:3000/api/estadisticas', { headers: { 'Authorization': `Bearer ${token}` } })
                     .then(res => res.json())
                     .then(data => { if (Array.isArray(data)) setSummaryData(data); })
-                    .catch(err => console.error("Error backend estadísticas:", err));
+                    .catch(err => console.error("Error estadísticas:", err));
             }, [token]);
 
             useEffect(() => {
@@ -141,7 +228,7 @@
                     fetch(`http://localhost:3000/api/datos/${tableFilter}`, { headers: { 'Authorization': `Bearer ${token}` } })
                         .then(res => res.json())
                         .then(data => { if (Array.isArray(data)) setTableData(data); })
-                        .catch(err => console.error("Error AWS datos:", err));
+                        .catch(err => console.error("Error datos:", err));
                 }
             }, [tableFilter, token]);
 
@@ -152,7 +239,6 @@
                     const complete = summaryData.reduce((acc, cat) => acc + (cat.complete || 0), 0);
                     return { total, complete, incomplete: total - complete, percentComplete: total === 0 ? 0 : Math.round((complete / total) * 100), isGlobal: true };
                 } else {
-                    if (tableData.length === 0) return null;
                     let total = tableData.length;
                     let incompleteRows = 0;
                     tableData.forEach(row => {
@@ -170,10 +256,8 @@
             }, [summaryData, tableData, tableFilter]);
 
             const processedRows = useMemo(() => {
-                let dynamicCols = [];
-                const rows = tableData.map(row => {
+                return tableData.map(row => {
                     const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
-                    if (dynamicCols.length === 0) dynamicCols = editableKeys.slice(0, 5);
                     let filledCount = 0;
                     let missingFieldsCount = 0;
                     editableKeys.forEach(k => {
@@ -184,9 +268,16 @@
                     const numCampos = editableKeys.length;
                     const percent = numCampos === 0 ? 100 : Math.round((filledCount / numCampos) * 100);
                     const nombreValor = row.nombre || row.name || row.titulo || row.title || `Reg #${row.id || '-'}`;
-                    return { ...row, _meta: { nombreValor, numCampos, missingFieldsCount, percent, editableKeys, isComplete: missingFieldsCount === 0 } };
+
+                    let fechaMod = "---";
+                    if (row.fecha_actualizacion) {
+                        fechaMod = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES');
+                    } else if (row.fecha_creacion) {
+                        fechaMod = new Date(row.fecha_creacion).toLocaleDateString('es-ES');
+                    }
+
+                    return { ...row, _meta: { nombreValor, numCampos, missingFieldsCount, percent, editableKeys, fechaMod, isComplete: missingFieldsCount === 0 } };
                 });
-                return { rows, dynamicCols };
             }, [tableData]);
 
             const handleSort = (key) => {
@@ -196,7 +287,7 @@
             };
 
             const filteredAndSortedRows = useMemo(() => {
-                let result = processedRows.rows.filter(row => {
+                let result = processedRows.filter(row => {
                     const matchesSearch = row._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase());
                     const matchesIncomplete = showOnlyIncomplete ? !row._meta.isComplete : true;
                     return matchesSearch && matchesIncomplete;
@@ -213,27 +304,38 @@
                     });
                 }
                 return result;
-            }, [processedRows.rows, tableSearch, showOnlyIncomplete, sortConfig]);
+            }, [processedRows, tableSearch, showOnlyIncomplete, sortConfig]);
 
-            const exportTableToExcel = () => {
-                if (!tableFilter || filteredAndSortedRows.length === 0) return;
-                const wb = XLSX.utils.book_new();
-                const wsData = filteredAndSortedRows.map(r => {
-                    const out = { "ESTADO": r._meta.isComplete ? "OK" : "Revisar", "PROGRESO": r._meta.percent + "%", "NOMBRE": r._meta.nombreValor };
-                    r._meta.editableKeys.forEach(c => { out[c.toUpperCase()] = r[c] || ""; });
-                    return out;
-                });
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), "Datos");
-                XLSX.writeFile(wb, `Auditoria_${tableFilter}.xlsx`);
+            // Lógica de redimensionamiento manual
+            const startResizing = (e) => {
+                isResizing.current = true;
+                const startX = e.pageX;
+                const startWidth = nameWidth;
+
+                const onMouseMove = (moveEvent) => {
+                    if (!isResizing.current) return;
+                    const newWidth = startWidth + (moveEvent.pageX - startX);
+                    if (newWidth > 100) setNameWidth(newWidth);
+                };
+
+                const onMouseUp = () => {
+                    isResizing.current = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
             };
 
-            const exportFormToExcel = () => {
-                if (!selectedRecord) return;
-                const wb = XLSX.utils.book_new();
-                const data = [["CAMPO", "VALOR ACTUAL", "NUEVO VALOR"]];
-                selectedRecord._meta.editableKeys.forEach(k => { data.push([k.toUpperCase(), selectedRecord[k] || "", ""]); });
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "Formulario");
-                XLSX.writeFile(wb, `Edicion_${selectedRecord._meta.nombreValor}.xlsx`);
+            // Auto-ajuste al doble clic
+            const autoResize = () => {
+                const names = filteredAndSortedRows.map(r => r._meta.nombreValor);
+                if (names.length === 0) return;
+                const longestName = names.reduce((a, b) => a.length > b.length ? a : b);
+                // Heurística de ancho: caracteres * 8px + padding
+                const estimatedWidth = (longestName.length * 8.5) + 32;
+                setNameWidth(Math.max(150, Math.min(estimatedWidth, 600)));
             };
 
             useEffect(() => {
@@ -248,7 +350,7 @@
                             datasets: [{
                                 data: [dashboardStats.complete, dashboardStats.incomplete],
                                 backgroundColor: [isDark ? '#34d399' : '#059669', isDark ? '#f87171' : '#dc2626'],
-                                borderWidth: 0, cutout: '75%'
+                                borderWidth: 0, cutout: '80%'
                             }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -262,122 +364,148 @@
                     .sort((a, b) => b.percent - a.percent);
             }, [summaryData]);
 
-            const renderSortIcon = (key) => {
-                if (sortConfig.key !== key) return <i className="ph ph-caret-up-down ml-1 opacity-30"></i>;
-                return sortConfig.direction === 'asc' ? <i className="ph-bold ph-caret-up ml-1 text-primary"></i> : <i className="ph-bold ph-caret-down ml-1 text-primary"></i>;
+            const exportTableToExcel = () => {
+                if (!tableFilter || filteredAndSortedRows.length === 0) return;
+                const wb = XLSX.utils.book_new();
+                const wsData = filteredAndSortedRows.map(r => {
+                    const out = { "ESTADO": r._meta.isComplete ? "OK" : "Revisar", "PROGRESO": r._meta.percent + "%", "NOMBRE": r._meta.nombreValor, "ULTIMA_MOD": r._meta.fechaMod };
+                    r._meta.editableKeys.forEach(c => { out[c.toUpperCase()] = r[c] || ""; });
+                    return out;
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), "Auditoría");
+                XLSX.writeFile(wb, `Reporte_Calidad_${tableFilter}.xlsx`);
+            };
+
+            const exportFormToExcel = () => {
+                if (!selectedRecord) return;
+                const wb = XLSX.utils.book_new();
+                const data = [["CAMPO FÍSICO", "VALOR ACTUAL EN SISTEMA", "NUEVO VALOR (ACTUALIZACIÓN)"]];
+                selectedRecord._meta.editableKeys.forEach(k => { data.push([k.toUpperCase(), selectedRecord[k] || "--- VACÍO ---", ""]); });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "Formulario");
+                XLSX.writeFile(wb, `Plantilla_Edicion_${selectedRecord._meta.nombreValor}.xlsx`);
             };
 
             return (
                 <div className="flex flex-col h-screen">
-                    {/* --- HEADER --- */}
-                    <header className="h-16 bg-navy-dark border-b-[4px] border-primary flex items-center justify-between px-6 z-30 shrink-0 shadow-md">
-                        <div className="flex items-center space-x-6">
+                    <header className="h-14 bg-navy-dark border-b-[3px] border-primary flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
+                        <div className="flex items-center space-x-5">
                             <div className="flex items-center space-x-3">
-                                <img src={BADAJOZ_LOGO_PATH} alt="Badajoz" className="h-8 object-contain" />
-                                <img src={LOGO_PATH} alt="Timestamp" className="h-8 object-contain" />
+                                <img src={BADAJOZ_LOGO_PATH} alt="Badajoz" className="h-7 object-contain dark:invert" />
+                                <img src={LOGO_PATH} alt="Timestamp" className="h-7 object-contain" />
                             </div>
-                            <div className="h-8 w-px bg-gray-700 hidden sm:block"></div>
-                            <span className="text-lg font-bold text-white font-serif tracking-wide hidden sm:block">Consultor de datos turísticos Badajoz</span>
+                            <div className="h-6 w-px bg-gray-600 hidden sm:block"></div>
+                            <span className="text-base font-bold text-white font-serif tracking-tight hidden sm:block">Auditoría Turística Badajoz</span>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2 bg-gray-800 px-4 py-1.5 rounded-full border border-gray-700 text-sm text-gray-300">
-                                <i className="ph ph-user text-lg"></i>
-                                <span className="font-medium">{userEmail ? userEmail.split('@')[0] : 'Admin'}</span>
-                                <button onClick={onLogout} className="ml-2 hover:text-white transition-colors"><i className="ph ph-sign-out text-lg"></i></button>
+                        <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-1 rounded-full border border-slate-600 text-xs text-gray-300">
+                                <i className="ph ph-user-circle text-lg"></i>
+                                <span className="font-semibold">{userEmail ? userEmail.split('@')[0] : 'Consultor'}</span>
+                                <button onClick={onLogout} className="ml-1 hover:text-white transition-colors" title="Salir"><i className="ph ph-power text-lg"></i></button>
                             </div>
                         </div>
                     </header>
 
                     <div className="flex-1 flex overflow-hidden">
-                        {/* --- SIDEBAR --- */}
-                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-20 shrink-0">
-                            <nav className="flex-1 p-4 space-y-1 mt-4">
-                                <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}>
-                                    <i className="ph ph-house text-xl mr-3"></i> Home
-                                </button>
-                                <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50'}`}>
-                                    <i className="ph ph-database text-xl mr-3"></i> Gestión de Datos
-                                </button>
-                            </nav>
-                            <div className="p-6 border-t border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Modo Oscuro</span>
-                                    <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-lg text-gray-400 hover:text-primary transition-all">
-                                        {isDark ? <i className="ph-fill ph-moon text-xl"></i> : <i className="ph ph-sun text-xl"></i>}
+                        {/* --- SIDEBAR IZQUIERDO --- */}
+                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-20 shrink-0 shadow-sm">
+                            <div className="p-4 space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center ml-1">
+                                        <i className="ph-fill ph-funnel mr-2 text-primary"></i> Contexto
+                                    </label>
+                                    <select
+                                        className="w-full py-2 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
+                                        value={tableFilter}
+                                        onChange={(e) => { setTableFilter(e.target.value); if (e.target.value) setCurrentView('data'); }}>
+                                        <option value="">Vista Global</option>
+                                        {Object.entries(CATEGORY_TRANSLATIONS).sort((a, b) => a[1].localeCompare(b[1])).map(([key, val]) => (
+                                            <option key={key} value={key}>{val}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
+
+                                <nav className="space-y-1">
+                                    <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                                        <i className="ph ph-house-line text-lg mr-3"></i> Home
+                                    </button>
+                                    <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                                        <i className="ph ph-database text-lg mr-3"></i> Gestión de Datos
+                                    </button>
+                                </nav>
+                            </div>
+
+                            <div className="mt-auto p-4 border-t border-gray-100 dark:border-gray-700">
+                                <div className="flex items-center justify-between px-2">
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Tema</span>
+                                    <button onClick={() => setIsDark(!isDark)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary transition-all">
+                                        {isDark ? <i className="ph-fill ph-moon text-lg"></i> : <i className="ph ph-sun text-lg"></i>}
                                     </button>
                                 </div>
                             </div>
                         </aside>
 
-                        {/* --- CONTENIDO --- */}
-                        <main className="flex-1 overflow-y-auto p-8 bg-gray-100/50 dark:bg-gray-900 transition-colors">
-                            {/* Selector de Contexto Global */}
-                            <div className="max-w-6xl mx-auto mb-8 bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-200/60 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 fade-in">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-lg text-primary"><i className="ph-fill ph-funnel text-xl"></i></div>
-                                    <div>
-                                        <h4 className="text-sm font-bold text-gray-900 dark:text-white">Contexto de Datos</h4>
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-tighter">Filtrar tabla de AWS</p>
-                                    </div>
-                                </div>
-                                <select className="w-full sm:w-80 py-2.5 px-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
-                                    value={tableFilter} onChange={(e) => { setTableFilter(e.target.value); if (e.target.value && currentView === 'dashboard') setCurrentView('data'); }}>
-                                    <option value="">Vista Global de AWS...</option>
-                                    {Object.entries(CATEGORY_TRANSLATIONS).sort((a,b)=>a[1].localeCompare(b[1])).map(([key, val]) => (
-                                        <option key={key} value={key}>{val}</option>
-                                    ))}
-                                </select>
-                            </div>
-
+                        <main className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-gray-900/40 transition-all custom-scrollbar">
                             {currentView === 'dashboard' && dashboardStats && (
-                                <div className="max-w-6xl mx-auto space-y-8 fade-in">
-                                    <div className="bg-white dark:bg-gray-800 p-10 rounded-[2rem] shadow-sm border border-gray-200/60 dark:border-gray-700">
-                                        <h2 className="text-3xl font-black mb-4 tracking-tight">Panel de Auditoría</h2>
-                                        <p className="text-gray-500 dark:text-gray-400 max-w-3xl leading-relaxed">Bienvenido a la herramienta de enriquecimiento de datos de <strong>Badajoz</strong>. Monitoriza la salud de la base de datos, localiza vacíos y optimiza la calidad de tu información.</p>
+                                <div className="max-w-5xl mx-auto space-y-6 fade-in">
+                                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24"></div>
+                                        <h2 className="text-2xl font-black mb-3 tracking-tight">Ecosistema de Calidad</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-500 dark:text-gray-400 leading-relaxed text-sm font-medium">
+                                            <p>Centralizamos la supervisión de los activos de <strong>Badajoz</strong>. Nuestro motor analiza cada registro en AWS para asegurar que la información cumpla con los estándares de excelencia requeridos.</p>
+                                            <p>Utilice las métricas para identificar carencias, priorizar la actualización y exportar informes. El objetivo es una ficha de datos 100% enriquecida para el mercado global.</p>
+                                        </div>
                                     </div>
 
-                                    <div className="bg-white dark:bg-gray-800 p-10 rounded-[2rem] shadow-sm border border-gray-200/60 flex flex-col lg:flex-row items-center gap-16 transition-all hover:shadow-md">
-                                        <div className="w-full lg:w-1/3 flex flex-col items-center">
-                                            <div className="relative h-56 w-56">
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row items-center gap-10">
+                                        <div className="w-full lg:w-1/4 flex flex-col items-center">
+                                            <div className="relative h-40 w-40">
                                                 <canvas ref={donutChartRef}></canvas>
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                    <span className="text-4xl font-black">{dashboardStats.percentComplete}%</span>
-                                                    <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mt-1">Calidad</span>
+                                                    <span className="text-3xl font-black">{dashboardStats.percentComplete}%</span>
                                                 </div>
                                             </div>
+                                            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud Global</span>
                                         </div>
-                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-8">
-                                            <div className="p-6 rounded-3xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50">
-                                                <i className="ph-fill ph-shield-check text-primary text-3xl mb-3"></i>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Índice Calidad</div>
-                                                <div className="text-3xl font-black">{dashboardStats.percentComplete}%</div>
+                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Calidad</div>
+                                                    <div className="text-2xl font-black">{dashboardStats.percentComplete}%</div>
+                                                </div>
+                                                <i className="ph-fill ph-shield-check text-primary text-2xl opacity-80"></i>
                                             </div>
-                                            <div className="p-6 rounded-3xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 text-primary">
-                                                <i className="ph-fill ph-warning-circle text-3xl mb-3"></i>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Incompletos</div>
-                                                <div className="text-3xl font-black">{dashboardStats.incomplete.toLocaleString()}</div>
+                                            <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-primary">Incompletos</div>
+                                                    <div className="text-2xl font-black text-primary">{dashboardStats.incomplete.toLocaleString()}</div>
+                                                </div>
+                                                <i className="ph-fill ph-warning-circle text-primary text-2xl opacity-80"></i>
                                             </div>
-                                            <div className="p-6 rounded-3xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50">
-                                                <i className="ph-fill ph-database text-blue-500 text-3xl mb-3"></i>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total AWS</div>
-                                                <div className="text-3xl font-black">{dashboardStats.total.toLocaleString()}</div>
+                                            <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-blue-500">Total AWS</div>
+                                                    <div className="text-2xl font-black">{dashboardStats.total.toLocaleString()}</div>
+                                                </div>
+                                                <i className="ph-fill ph-database text-blue-500 text-2xl opacity-80"></i>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white dark:bg-gray-800 p-10 rounded-[2rem] shadow-sm border border-gray-200/60 dark:border-gray-700">
-                                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-8 flex items-center">
-                                            <i className="ph-fill ph-circles-four mr-3 text-primary text-xl"></i> Estado por Categorías
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center">
+                                            <i className="ph-fill ph-circles-four mr-2 text-primary text-lg"></i> Jerarquía de Calidad
                                         </h4>
-                                        <div className="flex flex-wrap gap-4">
+                                        <div className="flex flex-wrap gap-3">
                                             {sortedSummary.map(cat => (
                                                 <button key={cat.name} onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
-                                                    className="pill-transition flex items-center px-5 py-3 rounded-2xl border border-opacity-10 hover:shadow-lg transition-all group"
+                                                    className="pill-transition flex items-center px-4 py-2 rounded-xl border border-opacity-10 hover:shadow-lg transition-all group"
                                                     style={{ backgroundColor: getPastelColor(cat.percent, isDark), borderColor: isDark ? getSolidColor(cat.percent, isDark) : 'transparent' }}>
-                                                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 mr-4 group-hover:text-primary transition-colors">
+                                                    <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 mr-3 group-hover:text-primary">
                                                         {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
                                                     </span>
-                                                    <span className="text-[11px] font-black px-3 py-1 rounded-xl text-white shadow-sm" style={{ backgroundColor: getSolidColor(cat.percent, isDark) }}>{cat.percent}%</span>
+                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg text-white" style={{ backgroundColor: getSolidColor(cat.percent, isDark) }}>{cat.percent}%</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -386,67 +514,74 @@
                             )}
 
                             {currentView === 'data' && tableFilter && (
-                                <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-6">
-                                    <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200/60 shadow-sm gap-6">
+                                <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-4">
+                                    <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200/60 shadow-sm gap-4">
                                         <div className="flex items-center gap-6 w-full md:w-auto">
-                                            <div className="relative w-full md:w-96">
-                                                <i className="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
-                                                <input type="text" placeholder="Buscar registros..." value={tableSearch} onChange={e => setTableSearch(e.target.value)} className="w-full pl-12 pr-4 py-3 border border-gray-100 dark:border-gray-600 rounded-xl text-sm bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-primary/50 font-medium" />
+                                            <div className="relative w-full md:w-80">
+                                                <i className="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                                <input type="text" placeholder="Localizar..." value={tableSearch} onChange={e => setTableSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-100 dark:border-gray-600 rounded-xl text-xs bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-primary/20 font-semibold" />
                                             </div>
-                                            <label className="flex items-center gap-3 text-xs font-bold uppercase tracking-tighter text-gray-500 cursor-pointer hover:text-primary transition-colors">
-                                                <input type="checkbox" checked={showOnlyIncomplete} onChange={e => setShowOnlyIncomplete(e.target.checked)} className="rounded text-primary focus:ring-primary w-5 h-5 border-gray-200" />
-                                                <span>Incompletos</span>
+                                            <label className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-400 cursor-pointer">
+                                                <input type="checkbox" checked={showOnlyIncomplete} onChange={e => setShowOnlyIncomplete(e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4 border-gray-200" />
+                                                <span>Faltantes</span>
                                             </label>
                                         </div>
-                                        <button onClick={exportTableToExcel} className="w-full md:w-auto flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95">
-                                            <i className="ph-bold ph-microsoft-excel-logo mr-3 text-lg"></i> Exportar Auditoría
+                                        <button onClick={exportTableToExcel} className="w-full md:w-auto px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95">
+                                            <i className="ph-bold ph-file-xls mr-2 text-lg"></i> Exportar Excel
                                         </button>
                                     </div>
 
-                                    <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm flex-1">
-                                        <div className="overflow-x-auto h-full">
-                                            <table className="w-full text-left text-sm border-collapse whitespace-nowrap">
-                                                <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-400 font-bold uppercase text-[10px] tracking-widest sticky top-0 z-10">
+                                    <div className="bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm flex-1 flex flex-col">
+                                        <div className="overflow-x-auto h-full custom-scrollbar">
+                                            <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-900/70 text-gray-400 font-black uppercase text-[10px] tracking-widest sticky top-0 z-10 backdrop-blur-md border-b border-gray-100 dark:border-gray-700">
                                                     <tr>
-                                                        <th className="p-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('isComplete')}>Estado {renderSortIcon('isComplete')}</th>
-                                                        <th className="p-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('nombreValor')}>Recurso {renderSortIcon('nombreValor')}</th>
-                                                        <th className="p-6 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('missingFieldsCount')}>Faltantes {renderSortIcon('missingFieldsCount')}</th>
-                                                        {processedRows.dynamicCols.map(col => (
-                                                            <th key={col} className="p-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort(col)}>
-                                                                {col.replace(/_/g, ' ')} {renderSortIcon(col)}
-                                                            </th>
-                                                        ))}
-                                                        <th className="p-6 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => handleSort('percent')}>Progreso {renderSortIcon('percent')}</th>
-                                                        <th className="p-6 text-center">Acciones</th>
+                                                        <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('isComplete')}>Estado</th>
+                                                        <th className="py-3 px-4 relative group" style={{ width: nameWidth }}>
+                                                            <div className="cursor-pointer hover:text-primary" onClick={() => handleSort('nombreValor')}>Nombre</div>
+                                                            {/* Resizer handle */}
+                                                            <div
+                                                                className={`resizer ${isResizing.current ? 'is-resizing' : ''}`}
+                                                                onMouseDown={startResizing}
+                                                                onDoubleClick={autoResize}
+                                                                title="Arrastra para redimensionar o doble clic para autoajustar"
+                                                            ></div>
+                                                        </th>
+                                                        <th className="py-3 px-4 text-center cursor-pointer hover:text-primary" onClick={() => handleSort('missingFieldsCount')}>Faltantes</th>
+                                                        <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('percent')}>Progreso</th>
+                                                        <th className="py-3 px-4 text-center cursor-pointer hover:text-primary" onClick={() => handleSort('fechaMod')}>Última Mod.</th>
+                                                        <th className="py-3 px-4 text-center">Detalle</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                                                     {filteredAndSortedRows.map(row => (
-                                                        <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
-                                                            <td className="p-6">
-                                                                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black ${row._meta.isComplete ? 'bg-green-100/50 text-green-700 dark:bg-green-900/30' : 'bg-red-100/50 text-primary dark:bg-red-900/30'}`}>
-                                                                    {row._meta.isComplete ? 'ÓPTIMO' : 'REVISAR'}
+                                                        <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all group">
+                                                            <td className="py-2.5 px-4">
+                                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[9px] font-black ${row._meta.isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-50 text-primary dark:bg-red-900/30'}`}>
+                                                                    {row._meta.isComplete ? 'OK' : 'REVISAR'}
                                                                 </span>
                                                             </td>
-                                                            <td className="p-6 font-bold text-gray-900 dark:text-gray-100">{row._meta.nombreValor}</td>
-                                                            <td className="p-6 text-center">
-                                                                <span className={`font-bold px-2.5 py-1 rounded-full text-xs ${row._meta.missingFieldsCount > 0 ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-gray-100 text-gray-400'}`}>
-                                                                    {row._meta.missingFieldsCount}
-                                                                </span>
+                                                            <td className="py-2.5 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>
+                                                                {row._meta.nombreValor}
                                                             </td>
-                                                            {processedRows.dynamicCols.map(col => (
-                                                                <td key={col} className="p-6 text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{row[col] || '---'}</td>
-                                                            ))}
-                                                            <td className="p-6 min-w-[150px]">
+                                                            <td className="py-2.5 px-4 text-center">
+                                                                <span className="font-bold text-gray-400">{row._meta.missingFieldsCount}</span>
+                                                            </td>
+                                                            <td className="py-2.5 px-4 w-48">
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                                                                        <div className="h-full" style={{ width: `${row._meta.percent}%`, backgroundColor: getSolidColor(row._meta.percent, isDark) }}></div>
+                                                                    <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                                                        <div className="h-full transition-all duration-700" style={{ width: `${row._meta.percent}%`, backgroundColor: getSolidColor(row._meta.percent, isDark) }}></div>
                                                                     </div>
-                                                                    <span className="text-[11px] font-black w-10 text-right" style={{ color: getSolidColor(row._meta.percent, isDark) }}>{row._meta.percent}%</span>
+                                                                    <span className="text-[10px] font-black w-6 text-right" style={{ color: getSolidColor(row._meta.percent, isDark) }}>{row._meta.percent}%</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="p-6 text-center">
-                                                                <button onClick={() => setSelectedRecord(row)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl hover:text-primary transition-all"><i className="ph-bold ph-eye text-xl"></i></button>
+                                                            <td className="py-2.5 px-4 text-center text-gray-400 font-medium">
+                                                                {row._meta.fechaMod}
+                                                            </td>
+                                                            <td className="py-2.5 px-4 text-center">
+                                                                <button onClick={() => setSelectedRecord(row)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:text-primary transition-all active:scale-90 shadow-sm">
+                                                                    <i className="ph-bold ph-eye text-lg"></i>
+                                                                </button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -459,51 +594,53 @@
                         </main>
                     </div>
 
-                    {/* --- MODAL DETALLE (AMPLIADO A 4/6) --- */}
+                    {/* --- MODAL DETALLE (4/6 ANCHO) --- */}
                     {selectedRecord && (
-                        <div className="fixed inset-0 bg-navy-dark/90 backdrop-blur-md z-50 flex items-center justify-center p-6 fade-in">
-                            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-[66%] max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-white/10 slide-up">
+                        <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-6 fade-in">
+                            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-[66%] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
                                 <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary"><i className="ph-fill ph-database text-2xl"></i></div>
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><i className="ph-fill ph-database text-2xl"></i></div>
                                         <div>
-                                            <h3 className="font-black text-2xl tracking-tight text-gray-900 dark:text-white">{selectedRecord._meta.nombreValor}</h3>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">ID AWS: {selectedRecord.id || 'N/A'}</p>
+                                            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white leading-none">{selectedRecord._meta.nombreValor}</h3>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Atributos AWS | {selectedRecord.id || 'Nuevo'}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setSelectedRecord(null)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-2xl hover:text-primary transition-all"><i className="ph-bold ph-x text-xl"></i></button>
+                                    <button onClick={() => setSelectedRecord(null)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-2xl text-gray-500 hover:text-primary transition-all"><i className="ph-bold ph-x text-xl"></i></button>
                                 </div>
-                                <div className="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-white dark:bg-gray-800 custom-scrollbar">
+
+                                <div className="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-white dark:bg-gray-800 custom-scrollbar">
                                     {selectedRecord._meta.editableKeys.map(key => {
                                         const val = selectedRecord[key];
-                                        const isLongText = (val && val.length > 100) || key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || key.toLowerCase().includes('body');
+                                        const isDescription = key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || (val && val.length > 120);
                                         return (
-                                            <div key={key} className={`${isLongText ? 'md:col-span-2 lg:col-span-3' : ''} space-y-2`}>
-                                                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">{key.replace(/_/g, ' ')}</label>
-                                                {isLongText ? (
-                                                    <div className="p-5 bg-gray-50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-40 overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300">
-                                                        {val || 'Sin contenido detallado en AWS.'}
+                                            <div key={key} className={`${isDescription ? 'md:col-span-2 lg:col-span-3' : ''} space-y-1.5`}>
+                                                <label className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest ml-1">{key.replace(/_/g, ' ')}</label>
+                                                {isDescription ? (
+                                                    <div className="p-5 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[200px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
+                                                        {val || 'Sin descripción detallada.'}
                                                     </div>
                                                 ) : (
-                                                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-bold truncate">
-                                                        {val || <span className="font-normal italic text-gray-400">Campo vacío</span>}
+                                                    <div className="p-3.5 bg-gray-50/50 dark:bg-gray-900/50 rounded-xl text-xs border border-gray-100 dark:border-gray-700/50 font-bold truncate shadow-inner">
+                                                        {val || <span className="font-normal italic text-gray-400 opacity-50">Vacío</span>}
                                                     </div>
                                                 )}
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className="p-8 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+
+                                <div className="p-8 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                            <div className="h-full" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
+                                        <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                            <div className="h-full transition-all duration-1000" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
                                         </div>
-                                        <span className="text-xs font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% completado</span>
+                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% Completitud</span>
                                     </div>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => setSelectedRecord(null)} className="px-8 py-3.5 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">Cerrar Visor</button>
-                                        <button onClick={exportFormToExcel} className="px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-sm font-bold flex items-center justify-center shadow-lg shadow-green-600/20 active:scale-95 transition-all">
-                                            <i className="ph-bold ph-microsoft-excel-logo mr-3 text-xl"></i> Exportar Plantilla de Edición
+                                    <div className="flex gap-3 w-full sm:w-auto">
+                                        <button onClick={() => setSelectedRecord(null)} className="flex-1 sm:flex-none px-6 py-3 text-[10px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">Cerrar</button>
+                                        <button onClick={exportFormToExcel} className="flex-1 sm:flex-none px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-[11px] font-black flex items-center justify-center shadow-lg active:scale-95 transition-all">
+                                            <i className="ph-bold ph-microsoft-excel-logo mr-2 text-xl"></i> Descargar Enriquecimiento
                                         </button>
                                     </div>
                                 </div>
@@ -532,31 +669,31 @@
                     });
                     const data = await res.json();
                     if (res.ok) { setToken(data.token); setIsAuthenticated(true); }
-                    else { setError(data.message || 'Credenciales incorrectas'); }
-                } catch (err) { setError('Fallo de conexión al servidor local.'); }
+                    else { setError(data.message || 'Error de acceso'); }
+                } catch (err) { setError('Error de conexión.'); }
             };
 
             if (!isAuthenticated) {
                 return (
-                    <div className="h-full flex items-center justify-center bg-gray-900 p-6 relative overflow-hidden">
-                        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-primary rounded-full blur-[150px] opacity-10"></div>
-                        <div className="bg-white dark:bg-gray-800 p-12 rounded-[3rem] shadow-2xl w-full max-w-md relative z-10 fade-in border border-white/5">
+                    <div className="h-full flex items-center justify-center bg-gray-900 p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-primary rounded-full blur-[200px] opacity-[0.05] -mr-96 -mt-96"></div>
+                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl w-full max-w-md relative z-10 border border-white/5">
                             <div className="text-center mb-10">
-                                <img src={LOGO_PATH} alt="Timestamp" className="h-12 mx-auto mb-8" />
-                                <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Acceso Auditoría</h2>
-                                <p className="text-gray-400 mt-3 font-semibold text-sm uppercase tracking-widest">Data Quality Dashboard</p>
+                                <img src={LOGO_PATH} alt="Timestamp" className="h-10 mx-auto mb-8" />
+                                <h2 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Acceso Auditoría</h2>
+                                <p className="text-gray-400 mt-2 font-black text-[10px] uppercase tracking-[0.2em]">Data Quality Manager</p>
                             </div>
-                            {error && <div className="bg-red-500/10 text-primary p-5 rounded-2xl text-xs font-bold mb-8 flex items-center gap-3 border border-primary/20"><i className="ph-fill ph-warning-circle text-xl"></i> {error}</div>}
+                            {error && <div className="bg-red-500/10 text-primary p-4 rounded-2xl text-[10px] font-black mb-6 flex items-center gap-3 border border-primary/20"><i className="ph-fill ph-warning-circle text-xl"></i> {error}</div>}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Usuario</label>
-                                    <input type="text" required value={email} onChange={e => setEmail(e.target.value)} placeholder="admin" className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:ring-4 focus:ring-primary/20 transition-all font-semibold" />
+                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Identificador</label>
+                                    <input type="text" required value={email} onChange={e => setEmail(e.target.value)} className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 font-bold transition-all text-xs" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-2">Contraseña</label>
-                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:ring-4 focus:ring-primary/20 transition-all font-semibold" />
+                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Credencial</label>
+                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 font-bold transition-all text-xs" />
                                 </div>
-                                <button type="submit" className="w-full bg-primary hover:bg-primary-600 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-2xl shadow-primary/30 transition-all active:scale-95 mt-4">Entrar al Panel</button>
+                                <button type="submit" className="w-full bg-primary hover:bg-primary-600 text-white py-4 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95 mt-4">Iniciar Sesión</button>
                             </form>
                         </div>
                     </div>
@@ -569,4 +706,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
