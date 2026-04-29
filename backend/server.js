@@ -4,7 +4,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 // ==========================================
-// 🚀 IMPORTS PARA PRODUCCIÓN (Para el compi)
+// 🚀 IMPORTS PARA PRODUCCIÓN 
 // const bcrypt = require('bcryptjs'); 
 // const jwt = require('jsonwebtoken'); 
 // ==========================================
