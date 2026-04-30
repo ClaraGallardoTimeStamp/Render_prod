@@ -74,43 +74,48 @@ app.post('/api/auth/login', async (req, res) => {
 // ==========================================
 
 // 1. Obtener todas las tablas y sus estadísticas (NUEVO CÁLCULO REAL)
+// 1. Obtener todas las tablas y sus estadísticas (AHORA INCLUYE ESTADO 'EN REVISIÓN')
 app.get('/api/estadisticas', authenticateToken, async (req, res) => {
     try {
-        // Consultamos al esquema de AWS qué tablas existen
         const [estadisticas] = await pool.query(`
             SELECT table_name as name, table_rows as total 
             FROM information_schema.tables 
             WHERE table_schema = ? AND table_rows > 0
         `, [process.env.DB_NAME]);
 
-        // ⚠️ DEFINE AQUÍ LOS CAMPOS QUE NO QUIERES CONTAR COMO VACÍOS
         const EXCLUDED_FIELDS = ['id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app',
             'accessibility_level', 'accessibility_description', 'uri_segittur', 'fecha_creacion',
-            'fecha_actualizacion',
-            'drupal_nid', 'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'];
+            'fecha_actualizacion', 'drupal_nid', 'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5', 'auditoria_estado', 'usuario_auditor'];
 
-        // Usamos Promise.all porque hacemos una consulta asíncrona por cada tabla
         const resultado = await Promise.all(estadisticas.map(async (est) => {
             const tabla = est.name;
             let completeRecordsCount = 0;
+            let revisionCount = 0; // NUEVO CONTADOR
             let actualTotal = 0;
 
             try {
-                // Traemos los datos físicos de esta tabla en concreto
-                const [filas] = await pool.query(`SELECT * FROM ??`, [tabla]);
-                actualTotal = filas.length; // length es más exacto que el information_schema
+                // Hacemos el JOIN con auditoría para saber qué registros únicos están bloqueados
+                const query = `
+                    SELECT t.*, a.estado as auditoria_estado 
+                    FROM ?? t
+                    LEFT JOIN registro_auditoria a ON a.nombre_tabla = ? AND a.registro_id = CAST(t.id AS CHAR)
+                `;
+                const [filas] = await pool.query(query, [tabla, tabla]);
+                actualTotal = filas.length; 
 
                 if (actualTotal > 0) {
                     filas.forEach(row => {
-                        // Filtramos para validar solo las columnas que nos importan
-                        // Ignoramos mayúsculas/minúsculas al excluir campos (igual que el frontend)
-                        const fieldsToValidate = Object.keys(row).filter(key => !EXCLUDED_FIELDS.includes(key.toLowerCase()));
+                        // 1. Si está en revisión, lo sumamos al bote amarillo y no lo evaluamos más
+                        if (row.auditoria_estado === 'En revisión') {
+                            revisionCount++;
+                            return; 
+                        }
 
+                        // 2. Si no está en revisión, miramos si está completo
+                        const fieldsToValidate = Object.keys(row).filter(key => !EXCLUDED_FIELDS.includes(key.toLowerCase()));
                         const isRecordComplete = fieldsToValidate.every(field => {
                             const value = row[field];
-                            // 2. Si es null o undefined, falla directamente
                             if (value === null || value === undefined) return false;
-                            // 3. Lo pasamos a texto y le quitamos los espacios fantasma (igual que el frontend)
                             return value.toString().trim() !== '';
                         });
 
@@ -123,12 +128,12 @@ app.get('/api/estadisticas', authenticateToken, async (req, res) => {
                 console.error(`Error al analizar la tabla ${tabla}:`, error);
             }
 
-            // Devolvemos el formato exacto que espera tu frontend para pintar la píldora
             return {
                 name: tabla,
                 total: actualTotal,
                 complete: completeRecordsCount,
-                incomplete: actualTotal - completeRecordsCount
+                enRevision: revisionCount, // Enviamos el dato al frontend
+                incomplete: actualTotal - completeRecordsCount - revisionCount // Total real deducido
             };
         }));
 
@@ -156,7 +161,7 @@ app.get('/api/datos/:tabla', authenticateToken, async (req, res) => {
         "tourism_destination", "tourist_attraction_site", "tourist_information_office",
         "town_hall", "traditional_market", "trail", "travel_agency", "trivia_question",
         "vehicle_experience", "vehicle_workshop", "vernacular_architecture", "video_360",
-        "video_media", "virtual_visit", "wifi_point", "winery"
+        "video_media", "virtual_visit", "wifi_point", "winery", "registro_auditoria"
     ];
 
     if (!tablasPermitidas.includes(tabla)) {
@@ -164,12 +169,49 @@ app.get('/api/datos/:tabla', authenticateToken, async (req, res) => {
     }
 
     try {
-        // SELECT * trae todas las columnas de la tabla dinámicamente
-        const [filas] = await pool.query(`SELECT * FROM ?? LIMIT 1000`, [tabla]);
+        // Realizamos un LEFT JOIN para traer el estado de auditoría si existe
+        const query = `
+            SELECT t.*, a.estado as auditoria_estado, a.usuario_auditor 
+            FROM ?? t
+            LEFT JOIN registro_auditoria a ON a.nombre_tabla = ? AND a.registro_id = CAST(t.id AS CHAR)
+            LIMIT 1000
+        `;
+        const [filas] = await pool.query(query, [tabla, tabla]);
         res.json(filas);
     } catch (error) {
         console.error(`Error al consultar la tabla ${tabla}:`, error);
         res.status(500).json({ message: "Error al leer los registros." });
+    }
+
+});
+
+// ==========================================
+// RUTA DE AUDITORÍA (NUEVO)
+// ==========================================
+app.post('/api/auditoria/descarga', authenticateToken, async (req, res) => {
+    const { tabla, registro_id } = req.body;
+
+    // Obtenemos el email del token (o del mock local)
+    const usuario = req.user.email;
+
+    if (!tabla || !registro_id) {
+        return res.status(400).json({ message: "Faltan datos para la auditoría." });
+    }
+
+    try {
+        // Inserta el registro o lo actualiza si ya fue descargado previamente
+        const query = `
+            INSERT INTO registro_auditoria (nombre_tabla, registro_id, estado, usuario_auditor, fecha_descarga)
+            VALUES (?, ?, 'En revisión', ?, NOW())
+            ON DUPLICATE KEY UPDATE 
+            estado = 'En revisión', usuario_auditor = ?, fecha_descarga = NOW()
+        `;
+
+        await pool.query(query, [tabla, registro_id, usuario, usuario]);
+        res.status(200).json({ message: "Auditoría registrada correctamente." });
+    } catch (error) {
+        console.error(`Error al registrar auditoría:`, error);
+        res.status(500).json({ message: "Error al actualizar estado en AWS." });
     }
 });
 

@@ -37,112 +37,41 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); } }
+        
+        @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
+        .animate-toast-progress { animation: toastProgress 5s linear forwards; }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+        .pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
-        }
-
-        .pill-transition {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Estilos para el redimensionamiento de columnas */
         .resizer {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: rgba(0, 0, 0, 0.05);
-            cursor: col-resize;
-            user-select: none;
-            touch-action: none;
-            transition: background 0.2s;
+            position: absolute; right: 0; top: 0; height: 100%; width: 4px; background: rgba(0, 0, 0, 0.05);
+            cursor: col-resize; user-select: none; touch-action: none; transition: background 0.2s;
         }
-
-        .dark .resizer {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .resizer:hover,
-        .resizer.is-resizing {
-            background: #EB1C23;
-            width: 4px;
-        }
+        .dark .resizer { background: rgba(255, 255, 255, 0.05); }
+        .resizer:hover, .resizer.is-resizing { background: #EB1C23; width: 4px; }
     </style>
 </head>
 
-<body
-    class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
 
     <div id="root" class="h-full flex flex-col"></div>
 
@@ -155,7 +84,7 @@
         const EXCLUDED_FIELDS = [
             'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app', 'accessibility_level',
             'accessibility_description', 'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid',
-            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'
+            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5', 'auditoria_estado', 'usuario_auditor'
         ].map(f => f.toLowerCase());
 
         const CATEGORY_TRANSLATIONS = {
@@ -176,6 +105,20 @@
             "vernacular_architecture": "Arquitectura Vernácula", "video_360": "Video 360", "video_media": "Medio de Video",
             "virtual_visit": "Visita Virtual", "wifi_point": "Punto WiFi", "winery": "Bodega"
         };
+
+        const FIELD_TRANSLATIONS = {
+            "nombre": "Nombre", "name": "Nombre", "title": "Título", "titulo": "Título",
+            "direccion": "Dirección", "address": "Dirección", "municipio": "Municipio",
+            "telefono": "Teléfono", "phone": "Teléfono", "email": "Correo Electrónico",
+            "long_description": "Descripción Larga", "short_description": "Descripción Corta",
+            "description": "Descripción", "descripción": "Descripción",
+            "latitud": "Latitud", "latitude": "Latitud", "longitud": "Longitud", "longitude": "Longitud",
+            "url_web": "Sitio Web", "web": "Sitio Web", "facebook": "Facebook", "twitter": "Twitter",
+            "instagram": "Instagram", "fecha_actualizacion": "Última Actualización",
+            "horario": "Horario de Apertura", "precio": "Precio/Tarifa"
+        };
+
+        const translateField = (key) => FIELD_TRANSLATIONS[key.toLowerCase()] || key.replace(/_/g, ' ').toUpperCase();
 
         const getSolidColor = (percent, isDark) => {
             if (percent <= 30) return isDark ? '#f87171' : '#dc2626';
@@ -202,7 +145,7 @@
             const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
             const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
-            // Estado para el ancho de la columna Nombre
+            const [toast, setToast] = useState(null);
             const [nameWidth, setNameWidth] = useState(240);
             const isResizing = useRef(false);
 
@@ -232,26 +175,39 @@
                 }
             }, [tableFilter, token]);
 
+            // 🧮 LÓGICA DE DATOS ACTUALIZADA CON TRES CATEGORÍAS PURAS
             const dashboardStats = useMemo(() => {
                 if (!tableFilter) {
                     if (summaryData.length === 0) return null;
                     const total = summaryData.reduce((acc, cat) => acc + (cat.total || 0), 0);
                     const complete = summaryData.reduce((acc, cat) => acc + (cat.complete || 0), 0);
-                    return { total, complete, incomplete: total - complete, percentComplete: total === 0 ? 0 : parseFloat(((complete / total) * 100).toFixed(2)), isGlobal: true };
+                    const enRevision = summaryData.reduce((acc, cat) => acc + (cat.enRevision || 0), 0);
+                    const incomplete = summaryData.reduce((acc, cat) => acc + (cat.incomplete || 0), 0);
+                    return { total, complete, enRevision, incomplete, percentComplete: total === 0 ? 0 : parseFloat(((complete / total) * 100).toFixed(2)), isGlobal: true };
                 } else {
                     let total = tableData.length;
+                    let completeRows = 0;
+                    let enRevisionRows = 0;
                     let incompleteRows = 0;
+
                     tableData.forEach(row => {
+                        // 1. Aislamos los "En revisión" del recuento de Incompletos para el chart
+                        if (row.auditoria_estado === 'En revisión') {
+                            enRevisionRows++;
+                            return; 
+                        }
+
                         const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
                         let isRowIncomplete = false;
                         editableKeys.forEach(k => {
                             const val = row[k];
                             if (val === null || val === undefined || val.toString().trim() === '') isRowIncomplete = true;
                         });
+                        
                         if (isRowIncomplete) incompleteRows++;
+                        else completeRows++;
                     });
-                    const completeRows = total - incompleteRows;
-                    return { total, complete: completeRows, incomplete: incompleteRows, percentComplete: total === 0 ? 0 : Math.round((completeRows / total) * 100), isGlobal: false };
+                    return { total, complete: completeRows, enRevision: enRevisionRows, incomplete: incompleteRows, percentComplete: total === 0 ? 0 : Math.round((completeRows / total) * 100), isGlobal: false };
                 }
             }, [summaryData, tableData, tableFilter]);
 
@@ -306,38 +262,33 @@
                 return result;
             }, [processedRows, tableSearch, showOnlyIncomplete, sortConfig]);
 
-            // Lógica de redimensionamiento manual
             const startResizing = (e) => {
                 isResizing.current = true;
                 const startX = e.pageX;
                 const startWidth = nameWidth;
-
                 const onMouseMove = (moveEvent) => {
                     if (!isResizing.current) return;
                     const newWidth = startWidth + (moveEvent.pageX - startX);
                     if (newWidth > 100) setNameWidth(newWidth);
                 };
-
                 const onMouseUp = () => {
                     isResizing.current = false;
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
                 };
-
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             };
 
-            // Auto-ajuste al doble clic
             const autoResize = () => {
                 const names = filteredAndSortedRows.map(r => r._meta.nombreValor);
                 if (names.length === 0) return;
                 const longestName = names.reduce((a, b) => a.length > b.length ? a : b);
-                // Heurística de ancho: caracteres * 8px + padding
                 const estimatedWidth = (longestName.length * 8.5) + 32;
                 setNameWidth(Math.max(150, Math.min(estimatedWidth, 600)));
             };
 
+            // 🍩 ACTUALIZACIÓN DEL GRÁFICO (AHORA CON 3 COLORES)
             useEffect(() => {
                 if (currentView !== 'dashboard' || !dashboardStats) return;
                 const ctx = donutChartRef.current;
@@ -346,10 +297,14 @@
                     donutChartInstance.current = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Completos', 'Incompletos'],
+                            labels: ['Completos', 'En Revisión', 'Incompletos'],
                             datasets: [{
-                                data: [dashboardStats.complete, dashboardStats.incomplete],
-                                backgroundColor: [isDark ? '#34d399' : '#059669', isDark ? '#f87171' : '#dc2626'],
+                                data: [dashboardStats.complete, dashboardStats.enRevision, dashboardStats.incomplete],
+                                backgroundColor: [
+                                    isDark ? '#34d399' : '#059669', // Verde
+                                    isDark ? '#fbbf24' : '#d97706', // Amarillo
+                                    isDark ? '#f87171' : '#dc2626'  // Rojo
+                                ],
                                 borderWidth: 0, cutout: '80%'
                             }]
                         },
@@ -376,17 +331,79 @@
                 XLSX.writeFile(wb, `Reporte_Calidad_${tableFilter}.xlsx`);
             };
 
-            const exportFormToExcel = () => {
+            const exportFormToExcel = async () => {
                 if (!selectedRecord) return;
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/auditoria/descarga', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            tabla: tableFilter,
+                            registro_id: selectedRecord.id
+                        })
+                    });
+                    
+                    if(response.ok) {
+                        setTableData(prevData => prevData.map(row => 
+                            row.id === selectedRecord.id 
+                                ? { ...row, auditoria_estado: 'En revisión' } 
+                                : row
+                        ));
+                        
+                        setSelectedRecord(prev => ({...prev, auditoria_estado: 'En revisión'}));
+
+                        setToast({ type: 'success', message: 'Registro puesto "En revisión" correctamente.' });
+                        setTimeout(() => setToast(null), 5000);
+                    } else {
+                        const errData = await response.json();
+                        setToast({ type: 'error', message: errData.message || 'Error al actualizar AWS.' });
+                        setTimeout(() => setToast(null), 5000);
+                    }
+                } catch (err) {
+                    console.error("No se pudo auditar la descarga:", err);
+                    setToast({ type: 'error', message: 'Error de conexión con el servidor.' });
+                    setTimeout(() => setToast(null), 5000);
+                }
+
                 const wb = XLSX.utils.book_new();
                 const data = [["CAMPO FÍSICO", "VALOR ACTUAL EN SISTEMA", "NUEVO VALOR (ACTUALIZACIÓN)"]];
-                selectedRecord._meta.editableKeys.forEach(k => { data.push([k.toUpperCase(), selectedRecord[k] || "--- VACÍO ---", ""]); });
+                selectedRecord._meta.editableKeys.forEach(k => {
+                    data.push([k.toUpperCase(), selectedRecord[k] || "--- VACÍO ---", ""]);
+                });
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "Formulario");
                 XLSX.writeFile(wb, `Plantilla_Edicion_${selectedRecord._meta.nombreValor}.xlsx`);
             };
 
             return (
-                <div className="flex flex-col h-screen">
+                <div className="flex flex-col h-screen relative">
+                    
+                    {/* 🔔 TOAST NOTIFICATION */}
+                    {toast && (
+                        <div className="fixed top-20 right-6 z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl overflow-hidden flex flex-col min-w-[300px] border border-gray-100 dark:border-gray-700 slide-up">
+                            <div className="p-4 flex items-center gap-3">
+                                {toast.type === 'success' ? (
+                                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
+                                        <i className="ph-fill ph-check-circle text-xl"></i>
+                                    </div>
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                                        <i className="ph-fill ph-warning-circle text-xl"></i>
+                                    </div>
+                                )}
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    {toast.message}
+                                </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700">
+                                <div className={`h-full ${toast.type === 'success' ? 'bg-green-500' : 'bg-primary'} animate-toast-progress`}></div>
+                            </div>
+                        </div>
+                    )}
+
                     <header className="h-14 bg-navy-dark border-b-[3px] border-primary flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
                         <div className="flex items-center space-x-5">
                             <div className="flex items-center space-x-3">
@@ -406,7 +423,6 @@
                     </header>
 
                     <div className="flex-1 flex overflow-hidden">
-                        {/* --- SIDEBAR IZQUIERDO --- */}
                         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-20 shrink-0 shadow-sm">
                             <div className="p-4 space-y-4">
                                 <div className="space-y-2">
@@ -468,13 +484,22 @@
                                             </div>
                                             <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud Global</span>
                                         </div>
-                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        
+                                        {/* 📦 AHORA HAY 4 COLUMNAS PARA INCLUIR LA CAJA AMARILLA */}
+                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                             <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Calidad</div>
-                                                    <div className="text-2xl font-black">{dashboardStats.percentComplete}%</div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-green-500">Completos</div>
+                                                    <div className="text-2xl font-black text-green-500">{dashboardStats.complete.toLocaleString()}</div>
                                                 </div>
-                                                <i className="ph-fill ph-shield-check text-primary text-2xl opacity-80"></i>
+                                                <i className="ph-fill ph-shield-check text-green-500 text-2xl opacity-80"></i>
+                                            </div>
+                                            <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                                <div>
+                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-amber-500">En Revisión</div>
+                                                    <div className="text-2xl font-black text-amber-500">{dashboardStats.enRevision.toLocaleString()}</div>
+                                                </div>
+                                                <i className="ph-fill ph-clock text-amber-500 text-2xl opacity-80"></i>
                                             </div>
                                             <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
                                                 <div>
@@ -486,7 +511,7 @@
                                             <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group">
                                                 <div>
                                                     <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-blue-500">Total AWS</div>
-                                                    <div className="text-2xl font-black">{dashboardStats.total.toLocaleString()}</div>
+                                                    <div className="text-2xl font-black text-blue-500">{dashboardStats.total.toLocaleString()}</div>
                                                 </div>
                                                 <i className="ph-fill ph-database text-blue-500 text-2xl opacity-80"></i>
                                             </div>
@@ -537,9 +562,9 @@
                                                 <thead className="bg-gray-50/50 dark:bg-gray-900/70 text-gray-400 font-black uppercase text-[10px] tracking-widest sticky top-0 z-10 backdrop-blur-md border-b border-gray-100 dark:border-gray-700">
                                                     <tr>
                                                         <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('isComplete')}>Estado</th>
+                                                        <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('auditoria_estado')}>Auditoría</th>
                                                         <th className="py-3 px-4 relative group" style={{ width: nameWidth }}>
                                                             <div className="cursor-pointer hover:text-primary" onClick={() => handleSort('nombreValor')}>Nombre</div>
-                                                            {/* Resizer handle */}
                                                             <div
                                                                 className={`resizer ${isResizing.current ? 'is-resizing' : ''}`}
                                                                 onMouseDown={startResizing}
@@ -558,7 +583,16 @@
                                                         <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all group">
                                                             <td className="py-2.5 px-4">
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[9px] font-black ${row._meta.isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-50 text-primary dark:bg-red-900/30'}`}>
-                                                                    {row._meta.isComplete ? 'OK' : 'REVISAR'}
+                                                                    {row._meta.isComplete ? 'OK' : 'EN PROGRESO'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-2.5 px-4">
+                                                                <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${row.auditoria_estado === 'En revisión'
+                                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800'
+                                                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                                                    }`}>
+                                                                    <i className={`ph-fill ${row.auditoria_estado === 'En revisión' ? 'ph-clock' : 'ph-info'} mr-1.5 text-lg`}></i>
+                                                                    {row.auditoria_estado || 'Sin revisar'}
                                                                 </span>
                                                             </td>
                                                             <td className="py-2.5 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>
@@ -594,35 +628,54 @@
                         </main>
                     </div>
 
-                    {/* --- MODAL DETALLE (4/6 ANCHO) --- */}
                     {selectedRecord && (
-                        <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-6 fade-in">
-                            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-[66%] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
-                                <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><i className="ph-fill ph-database text-2xl"></i></div>
+                        <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 fade-in">
+                            <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
+
+                                <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
+                                            <i className="ph-fill ph-database text-xl"></i>
+                                        </div>
                                         <div>
-                                            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white leading-none">{selectedRecord._meta.nombreValor}</h3>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Atributos AWS | {selectedRecord.id || 'Nuevo'}</p>
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="font-black text-lg tracking-tight text-gray-900 dark:text-white leading-none">
+                                                    {selectedRecord._meta.nombreValor}
+                                                </h3>
+                                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${selectedRecord.auditoria_estado === 'En revisión'
+                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'
+                                                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50'
+                                                    }`}>
+                                                    <i className={`ph-fill ${selectedRecord.auditoria_estado === 'En revisión' ? 'ph-clock' : 'ph-info'} mr-1`}></i>
+                                                    {selectedRecord.auditoria_estado || 'Sin revisar'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1.5">
+                                                ID Registro: {selectedRecord.id || 'Nuevo'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setSelectedRecord(null)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-2xl text-gray-500 hover:text-primary transition-all"><i className="ph-bold ph-x text-xl"></i></button>
+                                    <button onClick={() => setSelectedRecord(null)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-gray-500 hover:text-primary transition-all">
+                                        <i className="ph-bold ph-x text-lg"></i>
+                                    </button>
                                 </div>
 
-                                <div className="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-white dark:bg-gray-800 custom-scrollbar">
+                                <div className="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white dark:bg-gray-800 custom-scrollbar">
                                     {selectedRecord._meta.editableKeys.map(key => {
                                         const val = selectedRecord[key];
                                         const isDescription = key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || (val && val.length > 120);
                                         return (
-                                            <div key={key} className={`${isDescription ? 'md:col-span-2 lg:col-span-3' : ''} space-y-1.5`}>
-                                                <label className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest ml-1">{key.replace(/_/g, ' ')}</label>
+                                            <div key={key} className={`${isDescription ? 'sm:col-span-2' : ''} space-y-1.5`}>
+                                                <label className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest ml-1">
+                                                    {translateField(key)}
+                                                </label>
                                                 {isDescription ? (
-                                                    <div className="p-5 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[200px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
+                                                    <div className="p-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl text-xs border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[150px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
                                                         {val || 'Sin descripción detallada.'}
                                                     </div>
                                                 ) : (
-                                                    <div className="p-3.5 bg-gray-50/50 dark:bg-gray-900/50 rounded-xl text-xs border border-gray-100 dark:border-gray-700/50 font-bold truncate shadow-inner">
-                                                        {val || <span className="font-normal italic text-gray-400 opacity-50">Vacío</span>}
+                                                    <div className="p-3 bg-gray-50/50 dark:bg-gray-900/50 rounded-xl text-[11px] border border-gray-100 dark:border-gray-700/50 font-bold truncate shadow-inner text-gray-800 dark:text-gray-200">
+                                                        {val || <span className="font-normal italic text-gray-400 opacity-50">No disponible</span>}
                                                     </div>
                                                 )}
                                             </div>
@@ -630,19 +683,18 @@
                                     })}
                                 </div>
 
-                                <div className="p-8 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="p-6 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                        <div className="h-1.5 w-28 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
                                             <div className="h-full transition-all duration-1000" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
                                         </div>
-                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% Completitud</span>
+                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>
+                                            {selectedRecord._meta.percent}% Completado
+                                        </span>
                                     </div>
-                                    <div className="flex gap-3 w-full sm:w-auto">
-                                        <button onClick={() => setSelectedRecord(null)} className="flex-1 sm:flex-none px-6 py-3 text-[10px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">Cerrar</button>
-                                        <button onClick={exportFormToExcel} className="flex-1 sm:flex-none px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-[11px] font-black flex items-center justify-center shadow-lg active:scale-95 transition-all">
-                                            <i className="ph-bold ph-microsoft-excel-logo mr-2 text-xl"></i> Descargar Enriquecimiento
-                                        </button>
-                                    </div>
+                                    <button onClick={exportFormToExcel} className="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[11px] font-black flex items-center justify-center shadow-md active:scale-95 transition-all">
+                                        <i className="ph-bold ph-microsoft-excel-logo mr-2 text-lg"></i> Descargar Excel para Revisión
+                                    </button>
                                 </div>
                             </div>
                         </div>
