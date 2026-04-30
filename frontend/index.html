@@ -237,7 +237,7 @@
                     if (summaryData.length === 0) return null;
                     const total = summaryData.reduce((acc, cat) => acc + (cat.total || 0), 0);
                     const complete = summaryData.reduce((acc, cat) => acc + (cat.complete || 0), 0);
-                    return { total, complete, incomplete: total - complete, percentComplete: total === 0 ? 0 : Math.round((complete / total) * 100), isGlobal: true };
+                    return { total, complete, incomplete: total - complete, percentComplete: total === 0 ? 0 : parseFloat(((complete / total) * 100).toFixed(2)), isGlobal: true };
                 } else {
                     let total = tableData.length;
                     let incompleteRows = 0;
@@ -266,7 +266,7 @@
                         else missingFieldsCount++;
                     });
                     const numCampos = editableKeys.length;
-                    const percent = numCampos === 0 ? 100 : Math.round((filledCount / numCampos) * 100);
+                    const percent = numCampos === 0 ? 100 : parseFloat(((filledCount / numCampos) * 100).toFixed(2));
                     const nombreValor = row.nombre || row.name || row.titulo || row.title || `Reg #${row.id || '-'}`;
 
                     let fechaMod = "---";
@@ -360,7 +360,7 @@
 
             const sortedSummary = useMemo(() => {
                 return [...summaryData]
-                    .map(cat => ({ ...cat, percent: cat.total === 0 ? 0 : Math.round((cat.complete / cat.total) * 100) }))
+                    .map(cat => ({ ...cat, percent: cat.total === 0 ? 0 : parseFloat(((cat.complete / cat.total) * 100).toFixed(2)) }))
                     .sort((a, b) => b.percent - a.percent);
             }, [summaryData]);
 
@@ -427,7 +427,7 @@
                                 <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
 
                                 <nav className="space-y-1">
-                                    <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                                    <button onClick={() => { setCurrentView('dashboard'); setTableFilter(''); }} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
                                         <i className="ph ph-house-line text-lg mr-3"></i> Home
                                     </button>
                                     <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
@@ -495,7 +495,7 @@
 
                                     <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                                         <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center">
-                                            <i className="ph-fill ph-circles-four mr-2 text-primary text-lg"></i> Jerarquía de Calidad
+                                            <i className="ph-fill ph-circles-four mr-2 text-primary text-lg"></i> Calidad de Categorías
                                         </h4>
                                         <div className="flex flex-wrap gap-3">
                                             {sortedSummary.map(cat => (
