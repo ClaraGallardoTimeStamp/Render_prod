@@ -73,8 +73,7 @@ app.post('/api/auth/login', async (req, res) => {
 // RUTAS DE DATOS (AWS) - DINÁMICAS
 // ==========================================
 
-// 1. Obtener todas las tablas y sus estadísticas (NUEVO CÁLCULO REAL)
-// 1. Obtener todas las tablas y sus estadísticas (AHORA INCLUYE ESTADO 'EN REVISIÓN')
+// 1. Obtener todas las tablas y sus estadísticas (NUEVO CÁLCULO REAL , AHORA INCLUYE ESTADO 'EN REVISIÓN')
 app.get('/api/estadisticas', authenticateToken, async (req, res) => {
     try {
         const [estadisticas] = await pool.query(`
