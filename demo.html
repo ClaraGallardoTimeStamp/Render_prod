@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timestamp Consulting | Demo Data Quality</title>
+    <title>DEMO | Timestamp Consulting | Data Quality Dashboard</title>
 
     <!-- 🎨 CONFIGURACIÓN DE TAILWIND CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,8 +20,13 @@
                             300: '#f39aa0', 400: '#eb4f58', 500: '#EB1C23',
                             600: '#d4151a', 700: '#b10f14', 800: '#921014', 900: '#791215',
                         },
-                        navy: { 
+                        navy: {
                             dark: '#2a3241'
+                        },
+                        warm: {
+                            50: '#fcf6f6',
+                            100: '#faecec',
+                            200: '#f5dada',
                         }
                     },
                     fontFamily: {
@@ -49,69 +54,73 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
         .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); } }
+        @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
+        .animate-toast-progress { animation: toastProgress 5s linear forwards; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        
         .pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        /* Estilos para el redimensionamiento de columnas */
-        .resizer {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: rgba(0,0,0,0.03);
-            cursor: col-resize;
-            user-select: none;
-            touch-action: none;
-            transition: background 0.2s;
-        }
-        .dark .resizer { background: rgba(255,255,255,0.03); }
-        .resizer:hover, .resizer.is-resizing {
-            background: #EB1C23;
-            width: 4px;
-        }
+        .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 4px; background: rgba(0, 0, 0, 0.05); cursor: col-resize; user-select: none; transition: background 0.2s; }
+        .dark .resizer { background: rgba(255, 255, 255, 0.05); }
+        .resizer:hover, .resizer.is-resizing { background: #EB1C23; }
     </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
+<body class="bg-warm-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
 
     <div id="root" class="h-full flex flex-col"></div>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        const LOGO_PATH = "./assets/logo-red.svg";
-        const BADAJOZ_LOGO_PATH = "./assets/badajoz.svg";
-
-        const EXCLUDED_FIELDS = [
-            'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app', 'accessibility_level',
-            'accessibility_description', 'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid',
-            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5'
-        ].map(f => f.toLowerCase());
-
-        const CATEGORY_TRANSLATIONS = {
-            "alojamientos": "Alojamientos", "restaurantes": "Restaurantes", "museum": "Museos",
-            "monument": "Monumentos", "event": "Eventos", "beach": "Playas",
-            "archeological_site": "Sitios Arqueológicos", "nature_park": "Parques Naturales",
-            "tourist_office": "Oficinas de Turismo", "shopping": "Zonas Comerciales"
+        // --- MOCK DATA GENERATOR ---
+        const MOCK_CATEGORIES = ["iglesia", "restaurantes", "museo", "monument", "alojamientos"];
+        const EXCLUDED_FIELDS = ['id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'auditoria_estado'].map(f => f.toLowerCase());
+        
+        const generateMockData = () => {
+            const data = [];
+            const names = ["Catedral de San Juan", "Mesón El Corcho", "Museo de Bellas Artes", "Puerta de Palmas", "Hotel Zurbarán", "Parroquia de la Concepción", "Restaurante Alta Mirada", "Teatro López de Ayala"];
+            
+            for (let i = 1; i <= 50; i++) {
+                const cat = MOCK_CATEGORIES[Math.floor(Math.random() * MOCK_CATEGORIES.length)];
+                data.push({
+                    id: i,
+                    nombre: names[i % names.length] + " " + i,
+                    direccion: "Calle Falsa " + i,
+                    telefono: i % 3 === 0 ? "" : "924 000 00" + i,
+                    email: i % 5 === 0 ? "" : `info@sitio${i}.com`,
+                    municipio: "Badajoz",
+                    long_description: "Esta es una descripción detallada para el registro " + i + ". Contiene información histórica y de interés para el turista.",
+                    latitud: 38.8794,
+                    longitud: -6.9706,
+                    auditoria_estado: 'Sin revisar',
+                    categoria: cat,
+                    fecha_actualizacion: new Date().toISOString()
+                });
+            }
+            return data;
         };
 
+        const CATEGORY_TRANSLATIONS = {
+            "iglesia": "Iglesia", "restaurantes": "Restaurantes", "museo": "Museo", "monument": "Monumento", "alojamientos": "Alojamientos"
+        };
+
+        const FIELD_TRANSLATIONS = {
+            "nombre": "Nombre", "direccion": "Dirección", "telefono": "Teléfono", "email": "Email", "municipio": "Municipio", "long_description": "Descripción"
+        };
+
+        const translateField = (key) => FIELD_TRANSLATIONS[key.toLowerCase()] || key.toUpperCase();
         const getSolidColor = (percent, isDark) => {
-            if (percent <= 30) return isDark ? '#f87171' : '#dc2626'; 
-            if (percent >= 100) return isDark ? '#34d399' : '#059669'; 
+            if (percent <= 30) return isDark ? '#f87171' : '#dc2626';
+            if (percent >= 100) return isDark ? '#34d399' : '#059669';
             const hue = ((percent - 30) / 70) * 120;
             return `hsl(${hue}, ${isDark ? '40%' : '50%'}, ${isDark ? '55%' : '45%'})`;
         };
-
         const getPastelColor = (percent, isDark) => {
-            if (percent <= 30) return isDark ? 'rgba(248, 113, 113, 0.08)' : 'rgba(220, 38, 38, 0.04)';
-            if (percent >= 100) return isDark ? 'rgba(52, 211, 153, 0.08)' : 'rgba(5, 150, 105, 0.04)';
-            const hue = ((percent - 30) / 70) * 120;
+            const hue = percent <= 30 ? 0 : percent >= 100 ? 150 : ((percent - 30) / 70) * 120;
             return `hsla(${hue}, ${isDark ? '35%' : '40%'}, 50%, ${isDark ? '0.12' : '0.06'})`;
         };
 
@@ -119,150 +128,64 @@
             const [isDark, setIsDark] = useState(true);
             const [currentView, setCurrentView] = useState('dashboard');
             const [tableFilter, setTableFilter] = useState('');
-            const [selectedRecord, setSelectedRecord] = useState(null);
-            const [summaryData, setSummaryData] = useState([]);
-            const [tableData, setTableData] = useState([]);
+            const [allData, setAllData] = useState(generateMockData());
             const [tableSearch, setTableSearch] = useState('');
             const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
-            const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-            const [nameWidth, setNameWidth] = useState(260);
-            const isResizing = useRef(false);
-
+            const [selectedRecord, setSelectedRecord] = useState(null);
+            const [toast, setToast] = useState(null);
+            const [nameWidth, setNameWidth] = useState(240);
+            
             const donutChartRef = useRef(null);
             const donutChartInstance = useRef(null);
 
             useEffect(() => {
-                if (isDark) document.documentElement.classList.add('dark');
-                else document.documentElement.classList.remove('dark');
+                const root = document.documentElement;
+                if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
             }, [isDark]);
 
-            // SIMULACIÓN DE CARGA INICIAL
-            useEffect(() => {
-                setTimeout(() => {
-                    setSummaryData([
-                        { name: "alojamientos", total: 450, complete: 310 },
-                        { name: "restaurantes", total: 280, complete: 280 },
-                        { name: "museum", total: 112, complete: 50 },
-                        { name: "monument", total: 850, complete: 300 },
-                        { name: "event", total: 120, complete: 20 },
-                        { name: "beach", total: 8, complete: 8 },
-                        { name: "archeological_site", total: 45, complete: 15 }
-                    ]);
-                }, 500);
-            }, []);
-
-            // SIMULACIÓN DE CARGA DE TABLA
-            useEffect(() => {
-                if (tableFilter) {
-                    setTableData([]);
-                    setTimeout(() => {
-                        const mockRows = Array.from({ length: 45 }).map((_, i) => {
-                            const isComplete = Math.random() > 0.4;
-                            return {
-                                id: `aws-${1000 + i}`,
-                                nombre: `${CATEGORY_TRANSLATIONS[tableFilter] || 'Activo'} #${i + 1} - Badajoz Centro`,
-                                direccion: isComplete ? `Av. de Europa, ${i + 5}, Badajoz` : '',
-                                telefono: isComplete || Math.random() > 0.6 ? `+34 924 10 20 ${i < 10 ? '0'+i : i}` : '',
-                                email: isComplete ? `contacto@turismo-badajoz-${i}.es` : '',
-                                long_description: isComplete ? "Esta es una descripción enriquecida que contiene múltiples detalles sobre el activo turístico, su historia, horarios de apertura y recomendaciones para visitantes. Se extrae directamente del repositorio S3 de AWS para auditoría." : "",
-                                latitud: "38.8794",
-                                longitud: "-6.9706",
-                                fecha_actualizacion: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString()
-                            };
-                        });
-                        setTableData(mockRows);
-                    }, 600);
-                }
-            }, [tableFilter]);
+            const processedRows = useMemo(() => {
+                let data = tableFilter ? allData.filter(d => d.categoria === tableFilter) : allData;
+                return data.map(row => {
+                    const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()) && k !== 'categoria' && k !== 'fecha_actualizacion');
+                    let filledCount = 0;
+                    editableKeys.forEach(k => { if (row[k] && row[k].toString().trim() !== '') filledCount++; });
+                    const percent = Math.round((filledCount / editableKeys.length) * 100);
+                    const isComplete = filledCount === editableKeys.length;
+                    return { ...row, _meta: { nombreValor: row.nombre, numCampos: editableKeys.length, missingFieldsCount: editableKeys.length - filledCount, percent, editableKeys, isComplete, fechaMod: new Date(row.fecha_actualizacion).toLocaleDateString() } };
+                });
+            }, [allData, tableFilter]);
 
             const dashboardStats = useMemo(() => {
-                if (!tableFilter) {
-                    if (summaryData.length === 0) return null;
-                    const total = summaryData.reduce((acc, cat) => acc + cat.total, 0);
-                    const complete = summaryData.reduce((acc, cat) => acc + cat.complete, 0);
-                    return { total, complete, incomplete: total - complete, percentComplete: Math.round((complete / total) * 100), isGlobal: true };
-                } else {
-                    if (tableData.length === 0) return null;
-                    const total = tableData.length;
-                    let incompleteCount = 0;
-                    tableData.forEach(row => {
-                        const keys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k));
-                        if (keys.some(k => !row[k] || row[k].toString().trim() === '')) incompleteCount++;
-                    });
-                    const complete = total - incompleteCount;
-                    return { total, complete, incomplete: incompleteCount, percentComplete: Math.round((complete / total) * 100), isGlobal: false };
-                }
-            }, [summaryData, tableData, tableFilter]);
+                const total = processedRows.length;
+                const complete = processedRows.filter(r => r._meta.isComplete).length;
+                const enRevision = processedRows.filter(r => r.auditoria_estado === 'En revisión' && !r._meta.isComplete).length;
+                const incomplete = total - complete - enRevision;
+                return { total, complete, enRevision, incomplete, percentComplete: total === 0 ? 0 : Math.round((complete / total) * 100) };
+            }, [processedRows]);
 
-            const processedRows = useMemo(() => {
-                return tableData.map(row => {
-                    const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
-                    let filledCount = 0;
-                    let missingFieldsCount = 0;
-                    editableKeys.forEach(k => {
-                        if (row[k] && row[k].toString().trim() !== '') filledCount++;
-                        else missingFieldsCount++;
-                    });
-                    const percent = Math.round((filledCount / editableKeys.length) * 100);
-                    const fechaMod = row.fecha_actualizacion ? new Date(row.fecha_actualizacion).toLocaleDateString('es-ES') : '---';
-                    return { ...row, _meta: { nombreValor: row.nombre, missingFieldsCount, percent, editableKeys, fechaMod, isComplete: missingFieldsCount === 0 } };
-                });
-            }, [tableData]);
-
-            const filteredAndSortedRows = useMemo(() => {
-                let result = processedRows.filter(row => {
-                    const matchesSearch = row._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase());
-                    const matchesIncomplete = showOnlyIncomplete ? !row._meta.isComplete : true;
-                    return matchesSearch && matchesIncomplete;
-                });
-                if (sortConfig.key) {
-                    result.sort((a, b) => {
-                        let aVal = a._meta[sortConfig.key] ?? a[sortConfig.key];
-                        let bVal = b._meta[sortConfig.key] ?? b[sortConfig.key];
-                        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-                        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-                        return sortConfig.direction === 'asc' ? (aVal < bVal ? -1 : 1) : (aVal > bVal ? -1 : 1);
-                    });
-                }
-                return result;
-            }, [processedRows, tableSearch, showOnlyIncomplete, sortConfig]);
-
-            // REDIMENSIONAMIENTO
-            const startResizing = (e) => {
-                isResizing.current = true;
-                const startX = e.pageX;
-                const startWidth = nameWidth;
-                const onMouseMove = (me) => {
-                    if (!isResizing.current) return;
-                    setNameWidth(Math.max(120, startWidth + (me.pageX - startX)));
-                };
-                const onMouseUp = () => {
-                    isResizing.current = false;
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                };
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-            };
-
-            const autoResize = () => {
-                if (filteredAndSortedRows.length === 0) return;
-                const longest = filteredAndSortedRows.reduce((a, b) => a._meta.nombreValor.length > b._meta.nombreValor.length ? a : b);
-                setNameWidth(Math.min(500, (longest._meta.nombreValor.length * 8) + 40));
-            };
+            const summaryByCategory = useMemo(() => {
+                return MOCK_CATEGORIES.map(cat => {
+                    const catRows = allData.filter(d => d.categoria === cat);
+                    const complete = catRows.filter(r => {
+                        const keys = Object.keys(r).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()) && k !== 'categoria' && k !== 'fecha_actualizacion');
+                        return keys.every(k => r[k] && r[k].toString().trim() !== '');
+                    }).length;
+                    return { name: cat, percent: Math.round((complete / catRows.length) * 100) || 0 };
+                }).sort((a,b) => b.percent - a.percent);
+            }, [allData]);
 
             useEffect(() => {
-                if (currentView !== 'dashboard' || !dashboardStats) return;
-                const ctx = donutChartRef.current;
+                if (currentView !== 'dashboard') return;
+                const ctx = donutChartRef.current?.getContext('2d');
                 if (ctx) {
                     if (donutChartInstance.current) donutChartInstance.current.destroy();
                     donutChartInstance.current = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Completos', 'Incompletos'],
+                            labels: ['Completos', 'En Revisión', 'Incompletos'],
                             datasets: [{
-                                data: [dashboardStats.complete === 'N/A' ? 50 : dashboardStats.complete, dashboardStats.incomplete === 'N/A' ? 50 : dashboardStats.incomplete],
-                                backgroundColor: [isDark ? '#34d399' : '#059669', isDark ? '#f87171' : '#dc2626'],
+                                data: [dashboardStats.complete, dashboardStats.enRevision, dashboardStats.incomplete],
+                                backgroundColor: [isDark ? '#34d399' : '#059669', isDark ? '#fbbf24' : '#d97706', isDark ? '#f87171' : '#dc2626'],
                                 borderWidth: 0, cutout: '80%'
                             }]
                         },
@@ -271,197 +194,170 @@
                 }
             }, [dashboardStats, isDark, currentView]);
 
-            const sortedSummary = useMemo(() => {
-                return [...summaryData]
-                    .map(cat => ({ ...cat, percent: Math.round((cat.complete / cat.total) * 100) }))
-                    .sort((a, b) => b.percent - a.percent);
-            }, [summaryData]);
+            const handleAudit = () => {
+                const id = selectedRecord.id;
+                setAllData(prev => prev.map(r => r.id === id ? {...r, auditoria_estado: 'En revisión'} : r));
+                setToast({ type: 'success', message: 'Registro puesto "En revisión" (Simulado)' });
+                setTimeout(() => setToast(null), 3000);
+                setSelectedRecord(null);
+            };
+
+            const filteredRows = processedRows.filter(r => 
+                r._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase()) &&
+                (showOnlyIncomplete ? !r._meta.isComplete : true)
+            );
 
             return (
-                <div className="flex flex-col h-screen">
+                <div className="flex flex-col h-screen relative">
+                    {/* TOAST */}
+                    {toast && (
+                        <div className="fixed top-20 right-6 z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl overflow-hidden flex flex-col min-w-[300px] border border-warm-100 dark:border-gray-700 slide-up">
+                            <div className="p-4 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 shrink-0">
+                                    <i className="ph-fill ph-check-circle text-xl"></i>
+                                </div>
+                                <span className="text-sm font-bold">{toast.message}</span>
+                            </div>
+                            <div className="h-1 bg-green-500 animate-toast-progress"></div>
+                        </div>
+                    )}
+
                     <header className="h-14 bg-navy-dark border-b-[3px] border-primary flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
                         <div className="flex items-center space-x-5">
-                            <div className="flex items-center space-x-3">
-                                <img src={BADAJOZ_LOGO_PATH} alt="Badajoz" className="h-7 object-contain dark:invert" />
-                                <img src={LOGO_PATH} alt="Timestamp" className="h-7 object-contain" />
-                            </div>
-                            <div className="h-6 w-px bg-slate-500 hidden sm:block"></div>
-                            <span className="text-sm font-bold text-white font-serif tracking-tight hidden sm:block uppercase">Auditoría Digital de Activos · Badajoz</span>
+                            <span className="text-white font-serif font-bold text-lg tracking-tight">DEMO Auditoría Badajoz</span>
                         </div>
-                        <div className="flex items-center space-x-3">
-                            <div className="flex items-center space-x-2 bg-slate-600/40 px-3 py-1 rounded-full border border-slate-500/50 text-[11px] text-gray-200">
-                                <i className="ph-fill ph-user-circle text-lg"></i>
-                                <span className="font-bold">{userEmail || 'Demo User'}</span>
-                                <button onClick={onLogout} className="ml-1 hover:text-white transition-all"><i className="ph ph-power text-lg"></i></button>
-                            </div>
+                        <div className="flex items-center space-x-3 text-white text-xs">
+                            <span className="bg-slate-700 px-3 py-1 rounded-full border border-slate-600">{userEmail}</span>
+                            <button onClick={onLogout} className="hover:text-primary transition-colors"><i className="ph ph-power text-xl"></i></button>
                         </div>
                     </header>
 
                     <div className="flex-1 flex overflow-hidden">
-                        {/* SIDEBAR */}
-                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-20 shrink-0">
+                        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-warm-100 dark:border-gray-700 flex flex-col shrink-0">
                             <div className="p-4 space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center ml-1">
-                                        <i className="ph-fill ph-funnel mr-2 text-primary"></i> Contexto
-                                    </label>
-                                    <select 
-                                        className="w-full py-2 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] font-bold outline-none transition-all"
-                                        value={tableFilter} 
-                                        onChange={(e) => { setTableFilter(e.target.value); if(e.target.value) setCurrentView('data'); }}>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-2">Filtro Categoría</label>
+                                    <select className="w-full p-2 rounded-lg bg-warm-50 dark:bg-gray-900 border border-warm-200 dark:border-gray-700 text-xs font-bold outline-none" 
+                                        value={tableFilter} onChange={e => { setTableFilter(e.target.value); setCurrentView('data'); }}>
                                         <option value="">Vista Global</option>
-                                        {Object.entries(CATEGORY_TRANSLATIONS).map(([key, val]) => (
-                                            <option key={key} value={key}>{val}</option>
-                                        ))}
+                                        {MOCK_CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_TRANSLATIONS[c]}</option>)}
                                     </select>
                                 </div>
-                                <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
                                 <nav className="space-y-1">
-                                    <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                        <i className="ph ph-house-line text-lg mr-3"></i> Home
+                                    <button onClick={() => {setCurrentView('dashboard'); setTableFilter('');}} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg ${currentView==='dashboard' ? 'bg-primary/10 text-primary' : 'text-gray-500'}`}>
+                                        <i className="ph ph-house-line text-lg mr-3"></i> Dashboard
                                     </button>
-                                    <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'data' ? 'text-primary bg-primary-50 dark:bg-primary-900/20' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                        <i className="ph ph-database text-lg mr-3"></i> Gestión de Datos
+                                    <button onClick={() => setCurrentView('data')} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg ${currentView==='data' ? 'bg-primary/10 text-primary' : 'text-gray-500'}`}>
+                                        <i className="ph ph-database text-lg mr-3"></i> Tabla de Datos
                                     </button>
                                 </nav>
                             </div>
-                            <div className="mt-auto p-4 border-t border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center justify-between px-2">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase">Apariencia</span>
-                                    <button onClick={() => setIsDark(!isDark)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary transition-all">
-                                        {isDark ? <i className="ph-fill ph-moon text-lg"></i> : <i className="ph ph-sun text-lg"></i>}
-                                    </button>
-                                </div>
+                            <div className="mt-auto p-4 border-t dark:border-gray-700 flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase text-gray-400">Modo Oscuro</span>
+                                <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-lg bg-warm-50 dark:bg-gray-900 text-gray-400">
+                                    {isDark ? <i className="ph-fill ph-moon"></i> : <i className="ph-fill ph-sun"></i>}
+                                </button>
                             </div>
                         </aside>
 
-                        <main className="flex-1 overflow-y-auto p-6 bg-gray-50/30 dark:bg-gray-900/40 transition-all custom-scrollbar">
-                            {currentView === 'dashboard' && dashboardStats && (
+                        <main className="flex-1 overflow-y-auto p-6 bg-transparent dark:bg-gray-900/40 custom-scrollbar">
+                            {currentView === 'dashboard' ? (
                                 <div className="max-w-5xl mx-auto space-y-6 fade-in">
-                                    {/* EXPLICACIÓN ENRIQUECIDA */}
-                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32"></div>
-                                        <h2 className="text-2xl font-black mb-4 tracking-tight">Centro de Excelencia de Datos</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
-                                            <p>Esta plataforma centraliza la monitorización y enriquecimiento de los activos turísticos de <strong>Badajoz</strong>. El motor de auditoría escanea en tiempo real los registros para asegurar que la información promocional cumpla con los estándares de calidad internacional.</p>
-                                            <p>Localice registros con información incompleta, descargue plantillas de corrección masiva y optimice la presencia digital de su destino. Un ecosistema de datos íntegro es el primer paso hacia una promoción turística inteligente.</p>
-                                        </div>
+                                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700">
+                                        <h2 className="text-2xl font-black mb-2 tracking-tight">Ecosistema de Calidad (Demo)</h2>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Datos simulados para pruebas de interfaz y flujo de usuario.</p>
                                     </div>
 
-                                    {/* INDICADORES CON ICONO DERECHA */}
-                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row items-center gap-10">
-                                        <div className="w-full lg:w-1/4 flex flex-col items-center">
-                                            <div className="relative h-40 w-40">
-                                                <canvas ref={donutChartRef}></canvas>
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                    <span className="text-3xl font-black">{dashboardStats.percentComplete}%</span>
-                                                </div>
+                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-warm-100 dark:border-gray-700 flex flex-col md:flex-row items-center gap-10">
+                                        <div className="relative h-40 w-40">
+                                            <canvas ref={donutChartRef}></canvas>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span className="text-3xl font-black">{dashboardStats.percentComplete}%</span>
                                             </div>
-                                            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud de la Red</span>
                                         </div>
-                                        <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
-                                                <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Calidad</div>
-                                                    <div className="text-2xl font-black">{dashboardStats.percentComplete}%</div>
-                                                </div>
-                                                <i className="ph-fill ph-shield-check text-primary text-2xl opacity-70"></i>
+                                        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                                            <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                                                <div className="text-[10px] font-black text-green-500 uppercase mb-1">Completos</div>
+                                                <div className="text-2xl font-black text-green-600">{dashboardStats.complete}</div>
                                             </div>
-                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
-                                                <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-primary">Incompletos</div>
-                                                    <div className="text-2xl font-black text-primary">{dashboardStats.incomplete.toLocaleString()}</div>
-                                                </div>
-                                                <i className="ph-fill ph-warning-circle text-primary text-2xl opacity-70"></i>
+                                            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                                                <div className="text-[10px] font-black text-amber-500 uppercase mb-1">En Revisión</div>
+                                                <div className="text-2xl font-black text-amber-600">{dashboardStats.enRevision}</div>
                                             </div>
-                                            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/30 border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
-                                                <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-blue-500">Total Extraídos</div>
-                                                    <div className="text-2xl font-black">{dashboardStats.total.toLocaleString()}</div>
-                                                </div>
-                                                <i className="ph-fill ph-database text-blue-500 text-2xl opacity-70"></i>
+                                            <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+                                                <div className="text-[10px] font-black text-red-500 uppercase mb-1">Incompletos</div>
+                                                <div className="text-2xl font-black text-red-600">{dashboardStats.incomplete}</div>
+                                            </div>
+                                            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                                                <div className="text-[10px] font-black text-blue-500 uppercase mb-1">Total</div>
+                                                <div className="text-2xl font-black text-blue-600">{dashboardStats.total}</div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* PILDORAS ORDENADAS POR % */}
-                                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
-                                            <i className="ph-fill ph-circles-four mr-2 text-primary text-xl"></i> Jerarquía de Completitud Física
-                                        </h4>
-                                        <div className="flex flex-wrap gap-3">
-                                            {sortedSummary.map(cat => (
-                                                <button key={cat.name} onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
-                                                    className="pill-transition flex items-center px-4 py-2 rounded-2xl border border-opacity-10 hover:shadow-lg transition-all group"
-                                                    style={{ backgroundColor: getPastelColor(cat.percent, isDark), borderColor: isDark ? getSolidColor(cat.percent, isDark) : 'transparent' }}>
-                                                    <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 mr-3 group-hover:text-primary transition-all">
-                                                        {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
-                                                    </span>
-                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg text-white" style={{ backgroundColor: getSolidColor(cat.percent, isDark) }}>{cat.percent}%</span>
+                                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-warm-100 dark:border-gray-700">
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Salud por Categoría</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {summaryByCategory.map(cat => (
+                                                <button key={cat.name} onClick={() => {setTableFilter(cat.name); setCurrentView('data');}} 
+                                                    className="px-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center gap-3 hover:shadow-md transition-all"
+                                                    style={{backgroundColor: getPastelColor(cat.percent, isDark)}}>
+                                                    <span className="text-xs font-bold">{CATEGORY_TRANSLATIONS[cat.name]}</span>
+                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg text-white" style={{backgroundColor: getSolidColor(cat.percent, isDark)}}>{cat.percent}%</span>
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
                                 </div>
-                            )}
-
-                            {currentView === 'data' && tableFilter && (
-                                <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-4">
-                                    <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="relative w-80">
+                            ) : (
+                                <div className="h-full flex flex-col space-y-4 fade-in">
+                                    <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl gap-4">
+                                        <div className="flex items-center gap-4 w-full md:w-auto">
+                                            <div className="relative flex-1 md:w-80">
                                                 <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                                <input type="text" placeholder="Localizar registro..." value={tableSearch} onChange={e=>setTableSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-gray-100 dark:border-gray-600 rounded-xl text-xs bg-gray-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-primary/20 font-semibold" />
+                                                <input type="text" placeholder="Buscar por nombre..." value={tableSearch} onChange={e=>setTableSearch(e.target.value)}
+                                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-warm-200 dark:border-gray-700 bg-warm-50 dark:bg-gray-900 text-xs font-bold outline-none" />
                                             </div>
-                                            <label className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-400 cursor-pointer">
-                                                <input type="checkbox" checked={showOnlyIncomplete} onChange={e=>setShowOnlyIncomplete(e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                                            <label className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 cursor-pointer">
+                                                <input type="checkbox" checked={showOnlyIncomplete} onChange={e=>setShowOnlyIncomplete(e.target.checked)} className="rounded text-primary" />
                                                 <span>Faltantes</span>
                                             </label>
                                         </div>
-                                        <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95">
-                                            <i className="ph-bold ph-file-xls mr-2 text-lg"></i> Exportar Auditoría
-                                        </button>
+                                        <button onClick={() => alert('Exportación Excel (Simulada)')} className="px-4 py-2 bg-green-600 text-white text-[11px] font-black rounded-xl shrink-0"><i className="ph-bold ph-file-xls mr-2"></i> Exportar Todo</button>
                                     </div>
 
-                                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col">
-                                        <div className="overflow-x-auto h-full custom-scrollbar">
-                                            <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
-                                                <thead className="bg-gray-50/50 dark:bg-gray-900/70 text-gray-400 font-black uppercase text-[10px] tracking-widest sticky top-0 z-10 backdrop-blur-md">
+                                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-warm-200 dark:border-gray-700 overflow-hidden flex-1 flex flex-col">
+                                        <div className="overflow-x-auto custom-scrollbar h-full">
+                                            <table className="w-full text-left text-xs whitespace-nowrap">
+                                                <thead className="bg-warm-50/50 dark:bg-gray-900/50 sticky top-0 font-black uppercase text-[10px] text-gray-400 border-b dark:border-gray-700">
                                                     <tr>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer" onClick={()=>handleSort('isComplete')}>Estado</th>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 relative group" style={{ width: nameWidth }}>
-                                                            <div className="cursor-pointer" onClick={()=>handleSort('nombreValor')}>Nombre</div>
-                                                            <div className={`resizer ${isResizing.current ? 'is-resizing' : ''}`} onMouseDown={startResizing} onDoubleClick={autoResize} title="Doble clic para autoajustar"></div>
-                                                        </th>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center cursor-pointer" onClick={()=>handleSort('missingFieldsCount')}>Faltantes</th>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer" onClick={()=>handleSort('percent')}>Progreso</th>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center cursor-pointer" onClick={()=>handleSort('fechaMod')}>Última Mod.</th>
-                                                        <th className="py-3 px-4 border-b border-gray-100 dark:border-gray-700 text-center">Detalle</th>
+                                                        <th className="p-4">Estado</th>
+                                                        <th className="p-4">Nombre</th>
+                                                        <th className="p-4">Categoría</th>
+                                                        <th className="p-4">Progreso</th>
+                                                        <th className="p-4 text-center">Detalle</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                                                    {filteredAndSortedRows.map(row => (
-                                                        <tr key={row.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all group">
-                                                            <td className="py-2 px-4">
-                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black ${row._meta.isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/30' : 'bg-red-50 text-primary dark:bg-red-900/30'}`}>
-                                                                    {row._meta.isComplete ? 'ÓPTIMO' : 'REVISAR'}
+                                                <tbody className="divide-y dark:divide-gray-700">
+                                                    {filteredRows.map(row => (
+                                                        <tr key={row.id} className="hover:bg-warm-50/50 dark:hover:bg-gray-700/20">
+                                                            <td className="p-4">
+                                                                <span className={`px-2 py-1 rounded-md text-[9px] font-black ${row._meta.isComplete ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                                    {row._meta.isComplete ? 'OK' : 'INCOMPLETO'}
                                                                 </span>
                                                             </td>
-                                                            <td className="py-2 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>{row._meta.nombreValor}</td>
-                                                            <td className="py-2 px-4 text-center">
-                                                                <span className="font-bold text-gray-400">{row._meta.missingFieldsCount} campos</span>
-                                                            </td>
-                                                            <td className="py-2 px-4 w-40">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="flex-1 h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                                                                        <div className="h-full transition-all duration-700" style={{ width: `${row._meta.percent}%`, backgroundColor: getSolidColor(row._meta.percent, isDark) }}></div>
+                                                            <td className="p-4 font-bold">{row.nombre}</td>
+                                                            <td className="p-4 text-gray-400">{CATEGORY_TRANSLATIONS[row.categoria]}</td>
+                                                            <td className="p-4">
+                                                                <div className="flex items-center gap-2 w-32">
+                                                                    <div className="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                                        <div className="h-full" style={{width: `${row._meta.percent}%`, backgroundColor: getSolidColor(row._meta.percent, isDark)}}></div>
                                                                     </div>
-                                                                    <span className="text-[10px] font-black w-6 text-right" style={{ color: getSolidColor(row._meta.percent, isDark) }}>{row._meta.percent}%</span>
+                                                                    <span className="text-[9px] font-black">{row._meta.percent}%</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2 px-4 text-center text-gray-400 font-medium">{row._meta.fechaMod}</td>
-                                                            <td className="py-2 px-4 text-center">
-                                                                <button onClick={() => setSelectedRecord(row)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:text-primary transition-all active:scale-90 shadow-sm"><i className="ph-bold ph-eye text-lg"></i></button>
+                                                            <td className="p-4 text-center">
+                                                                <button onClick={() => setSelectedRecord(row)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:text-primary"><i className="ph-bold ph-eye"></i></button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -474,52 +370,34 @@
                         </main>
                     </div>
 
-                    {/* MODAL DETALLE (4/6 ANCHO) */}
+                    {/* MODAL DETALLE */}
                     {selectedRecord && (
-                        <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-6 fade-in">
-                            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-[66%] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
-                                <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner"><i className="ph-fill ph-database text-2xl"></i></div>
-                                        <div>
-                                            <h3 className="font-black text-xl tracking-tight text-gray-900 dark:text-white leading-none">{selectedRecord._meta.nombreValor}</h3>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Atributos AWS | {selectedRecord.id}</p>
-                                        </div>
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slide-up">
+                                <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-black text-xl">{selectedRecord.nombre}</h3>
+                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">ID: {selectedRecord.id} | {CATEGORY_TRANSLATIONS[selectedRecord.categoria]}</p>
                                     </div>
-                                    <button onClick={() => setSelectedRecord(null)} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-2xl text-gray-500 hover:text-primary transition-all"><i className="ph-bold ph-x text-xl"></i></button>
+                                    <button onClick={() => setSelectedRecord(null)} className="p-2 text-gray-400 hover:text-primary"><i className="ph-bold ph-x text-2xl"></i></button>
                                 </div>
-                                <div className="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-white dark:bg-gray-800 custom-scrollbar">
-                                    {selectedRecord._meta.editableKeys.map(key => {
-                                        const val = selectedRecord[key];
-                                        const isDescription = key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || (val && val.length > 120);
-                                        return (
-                                            <div key={key} className={`${isDescription ? 'md:col-span-2 lg:col-span-3' : ''} space-y-1.5`}>
-                                                <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-1">{key.replace(/_/g, ' ')}</label>
-                                                {isDescription ? (
-                                                    <div className="p-5 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl text-sm border border-gray-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[250px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
-                                                        {val || 'Sin contenido detallado en AWS.'}
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-3.5 bg-gray-50/50 dark:bg-gray-900/50 rounded-xl text-xs border border-gray-100 dark:border-gray-700/50 font-bold truncate shadow-inner">
-                                                        {val || <span className="font-normal italic text-gray-400 opacity-50">Dato faltante</span>}
-                                                    </div>
-                                                )}
+                                <div className="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {selectedRecord._meta.editableKeys.map(k => (
+                                        <div key={k} className={k==='long_description' ? 'md:col-span-2' : ''}>
+                                            <label className="text-[9px] font-black uppercase text-gray-400 mb-1 block tracking-tighter">{translateField(k)}</label>
+                                            <div className="p-3 bg-warm-50 dark:bg-gray-900 border dark:border-gray-700 rounded-xl text-xs font-bold">
+                                                {selectedRecord[k] || <span className="italic opacity-30">Vacio</span>}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="p-8 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-2 w-32 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                                            <div className="h-full transition-all duration-1000" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
                                         </div>
-                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% Completitud</span>
+                                    ))}
+                                </div>
+                                <div className="p-6 bg-warm-50/50 dark:bg-gray-900/50 border-t dark:border-gray-700 flex justify-between items-center">
+                                    <div className="text-[11px] font-black" style={{color: getSolidColor(selectedRecord._meta.percent, isDark)}}>
+                                        Progreso: {selectedRecord._meta.percent}%
                                     </div>
-                                    <div className="flex gap-3 w-full sm:w-auto">
-                                        <button onClick={() => setSelectedRecord(null)} className="flex-1 sm:flex-none px-6 py-3 text-[10px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">Cerrar</button>
-                                        <button onClick={exportFormToExcel} className="flex-1 sm:flex-none px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-[11px] font-black flex items-center justify-center shadow-lg active:scale-95 transition-all">
-                                            <i className="ph-bold ph-microsoft-excel-logo mr-2 text-xl"></i> Descargar Enriquecimiento
-                                        </button>
+                                    <div className="flex gap-3">
+                                        <button onClick={handleAudit} className="px-6 py-2 bg-primary text-white rounded-xl text-[11px] font-black">Marcar Revisado</button>
+                                        <button onClick={() => alert('Excel de Edición Generado')} className="px-6 py-2 bg-green-600 text-white rounded-xl text-[11px] font-black"><i className="ph-bold ph-microsoft-excel-logo mr-2"></i> Descargar Ficha</button>
                                     </div>
                                 </div>
                             </div>
@@ -531,26 +409,28 @@
 
         function App() {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
-            useEffect(() => { document.documentElement.classList.add('dark'); }, []);
+            const [email, setEmail] = useState('');
+
             if (!isAuthenticated) {
                 return (
-                    <div className="h-full flex items-center justify-center bg-gray-900 p-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-primary rounded-full blur-[200px] opacity-[0.05] -mr-96 -mt-96"></div>
-                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl w-full max-w-md relative z-10 border border-white/5 flex flex-col items-center">
-                            <img src={LOGO_PATH} alt="Timestamp" className="h-10 mx-auto mb-8" />
-                            <h2 className="text-2xl font-black tracking-tight text-white mb-2 uppercase">Modo Demo</h2>
-                            <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em] mb-10">Data Quality Auditor</p>
-                            <button onClick={()=>setIsAuthenticated(true)} className="w-full bg-primary hover:bg-primary-600 text-white py-4 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95">Acceder al Panel</button>
+                    <div className="h-full flex items-center justify-center bg-gray-900">
+                        <div className="bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-white/5">
+                            <h2 className="text-2xl font-black text-center mb-8">DEMO Login</h2>
+                            <form onSubmit={(e) => { e.preventDefault(); setIsAuthenticated(true); }} className="space-y-6">
+                                <input type="text" placeholder="Usuario (Demo)" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full px-6 py-4 bg-gray-900 border border-gray-700 rounded-2xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-primary" />
+                                <input type="password" placeholder="Contraseña" required className="w-full px-6 py-4 bg-gray-900 border border-gray-700 rounded-2xl text-white font-bold text-xs outline-none focus:ring-2 focus:ring-primary" />
+                                <button type="submit" className="w-full bg-primary py-4 rounded-2xl font-black text-white shadow-xl hover:scale-[1.02] transition-all">Acceder a la Demo</button>
+                                <p className="text-center text-[9px] text-gray-500 font-black uppercase tracking-widest">Usa cualquier dato para entrar</p>
+                            </form>
                         </div>
                     </div>
                 );
             }
-            return <Dashboard userEmail="DemoUser@timestamp.es" onLogout={() => setIsAuthenticated(false)} />;
+            return <Dashboard userEmail={email || 'Consultor_Demo'} onLogout={() => setIsAuthenticated(false)} />;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
-
 </html>
