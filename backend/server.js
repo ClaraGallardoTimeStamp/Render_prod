@@ -224,7 +224,7 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor backend conectado a AWS (${process.env.DB_HOST}) en el puerto ${PORT}`);
 });
 
-app.get('*', (req, res) => {
+app.get('/(.*)', (req, res) => {
     if (!req.path.startsWith('/api')) {
         res.sendFile(path.join(__dirname, '../frontend', 'idex.html'));
     }
