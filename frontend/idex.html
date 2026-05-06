@@ -20,14 +20,11 @@
                             300: '#f39aa0', 400: '#eb4f58', 500: '#EB1C23',
                             600: '#d4151a', 700: '#b10f14', 800: '#921014', 900: '#791215',
                         },
-                        navy: {
-                            dark: '#2a3241'
-                        },
-                        // Nueva paleta cálida para suavizar el modo claro (Rojo muy transparente)
+                        navy: { dark: '#2a3241' },
                         warm: {
-                            50: '#fcf6f6',  // Fondo principal muy suave
-                            100: '#faecec', // Fondos secundarios y hovers
-                            200: '#f5dada', // Bordes sutiles
+                            50: '#fcf6f6',
+                            100: '#faecec',
+                            200: '#f5dada',
                         }
                     },
                     fontFamily: {
@@ -43,126 +40,38 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes toastProgress {
-            from {
-                width: 100%;
-            }
-
-            to {
-                width: 0%;
-            }
-        }
-
-        .animate-toast-progress {
-            animation: toastProgress 5s linear forwards;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
-        }
-
-        .pill-transition {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); } }
+        @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
+        .animate-toast-progress { animation: toastProgress 5s linear forwards; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+        .pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
         .resizer {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: rgba(0, 0, 0, 0.05);
-            cursor: col-resize;
-            user-select: none;
-            touch-action: none;
-            transition: background 0.2s;
+            position: absolute; right: 0; top: 0; height: 100%; width: 4px;
+            background: rgba(0,0,0,0.05); cursor: col-resize; user-select: none;
+            touch-action: none; transition: background 0.2s;
         }
-
-        .dark .resizer {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .resizer:hover,
-        .resizer.is-resizing {
-            background: #EB1C23;
-            width: 4px;
-        }
+        .dark .resizer { background: rgba(255,255,255,0.05); }
+        .resizer:hover, .resizer.is-resizing { background: #EB1C23; width: 4px; }
     </style>
 </head>
 
-<body
-    class="bg-warm-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
-
+<body class="bg-warm-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
     <div id="root" class="h-full flex flex-col"></div>
 
     <script type="text/babel">
@@ -171,29 +80,51 @@
         const LOGO_PATH = "./assets/logo-red.svg";
         const BADAJOZ_LOGO_PATH = "./assets/badajoz.svg";
 
+        // ==========================================
+        // ✅ PRODUCCIÓN — URLs relativas (Render)
+        // ==========================================
+        //const API_BASE = '';
+
+    
+        // ==========================================
+        // 🛑 LOCAL — descomenta para desarrollo
+        // ==========================================
+        const API_BASE = 'http://localhost:3000';
+        
+
         const EXCLUDED_FIELDS = [
-            'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app', 'accessibility_level',
-            'accessibility_description', 'uri_segittur', 'fecha_creacion', 'fecha_actualizacion', 'drupal_nid',
-            'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4', 'nivel_5', 'auditoria_estado', 'usuario_auditor'
+            'id', 'palabras_clave', 'uri_clase', 'estado_publicacion', 'url_web', 'app',
+            'accessibility_level', 'accessibility_description', 'uri_segittur', 'fecha_creacion',
+            'fecha_actualizacion', 'drupal_nid', 'nivel_1', 'nivel_2', 'nivel_3', 'nivel_4',
+            'nivel_5', 'auditoria_estado', 'usuario_auditor'
         ].map(f => f.toLowerCase());
 
         const CATEGORY_TRANSLATIONS = {
-            "accessible_poi": "Punto de Interés Accesible", "alojamientos": "Alojamientos", "archeological_site": "Sitio Arqueológico",
-            "atm": "Cajero Automático", "audio_guide": "Audioguía", "beach": "Playa", "bike_lane": "Carril Bici",
-            "bridge": "Puente", "castle": "Castillo", "church": "Iglesia", "complementary_activities_company": "Actividades Complementarias",
-            "destination_experience": "Experiencia en Destino", "educational_centre": "Centro Educativo", "equestrian_club": "Club Hípico",
-            "event": "Evento", "fire_station": "Estación de Bomberos", "garden": "Jardín", "gas_station": "Gasolinera",
-            "historical_or_cultural_resource": "Recurso Histórico o Cultural", "image_360": "Imagen 360", "leisure_and_culture_facility": "Instalación de Ocio y Cultura",
-            "medical_service": "Servicio Médico", "miscellaneous_service": "Servicios Misceláneos", "monument": "Monumento",
-            "municipio_ref": "Referencia de Municipio", "museum": "Museo", "natural_park": "Parque Natural", "natural_view_point": "Mirador Natural",
-            "offer": "Oferta", "pamphlet": "Folleto", "pharmacy": "Farmacia", "photography": "Fotografía", "police_station": "Comisaría de Policía",
-            "primary_care": "Atención Primaria", "restaurantes": "Restaurantes", "route": "Ruta", "shopping_mall": "Centro Comercial",
-            "sport_facility": "Instalación Deportiva", "supermarket": "Supermercado", "tour_guide": "Guía Turístico",
-            "tourism_destination": "Destino Turístico", "tourist_attraction_site": "Atracción Turística", "tourist_information_office": "Oficina de Turismo",
-            "town_hall": "Ayuntamiento", "traditional_market": "Mercado Tradicional", "trail": "Sendero", "travel_agency": "Agencia de Viajes",
-            "trivia_question": "Pregunta de Trivial", "vehicle_experience": "Experiencia en Vehículo", "vehicle_workshop": "Taller de Vehículos",
-            "vernacular_architecture": "Arquitectura Vernácula", "video_360": "Video 360", "video_media": "Medio de Video",
-            "virtual_visit": "Visita Virtual", "wifi_point": "Punto WiFi", "winery": "Bodega"
+            "accessible_poi": "Punto de Interés Accesible", "alojamientos": "Alojamientos",
+            "archeological_site": "Sitio Arqueológico", "atm": "Cajero Automático",
+            "audio_guide": "Audioguía", "beach": "Playa", "bike_lane": "Carril Bici",
+            "bridge": "Puente", "castle": "Castillo", "church": "Iglesia",
+            "complementary_activities_company": "Actividades Complementarias",
+            "destination_experience": "Experiencia en Destino", "educational_centre": "Centro Educativo",
+            "equestrian_club": "Club Hípico", "event": "Evento", "fire_station": "Estación de Bomberos",
+            "garden": "Jardín", "gas_station": "Gasolinera",
+            "historical_or_cultural_resource": "Recurso Histórico o Cultural", "image_360": "Imagen 360",
+            "leisure_and_culture_facility": "Instalación de Ocio y Cultura", "medical_service": "Servicio Médico",
+            "miscellaneous_service": "Servicios Misceláneos", "monument": "Monumento",
+            "municipio_ref": "Referencia de Municipio", "museum": "Museo", "natural_park": "Parque Natural",
+            "natural_view_point": "Mirador Natural", "offer": "Oferta", "pamphlet": "Folleto",
+            "pharmacy": "Farmacia", "photography": "Fotografía", "police_station": "Comisaría de Policía",
+            "primary_care": "Atención Primaria", "restaurantes": "Restaurantes", "route": "Ruta",
+            "shopping_mall": "Centro Comercial", "sport_facility": "Instalación Deportiva",
+            "supermarket": "Supermercado", "tour_guide": "Guía Turístico",
+            "tourism_destination": "Destino Turístico", "tourist_attraction_site": "Atracción Turística",
+            "tourist_information_office": "Oficina de Turismo", "town_hall": "Ayuntamiento",
+            "traditional_market": "Mercado Tradicional", "trail": "Sendero",
+            "travel_agency": "Agencia de Viajes", "trivia_question": "Pregunta de Trivial",
+            "vehicle_experience": "Experiencia en Vehículo", "vehicle_workshop": "Taller de Vehículos",
+            "vernacular_architecture": "Arquitectura Vernácula", "video_360": "Video 360",
+            "video_media": "Medio de Video", "virtual_visit": "Visita Virtual",
+            "wifi_point": "Punto WiFi", "winery": "Bodega"
         };
 
         const FIELD_TRANSLATIONS = {
@@ -234,11 +165,10 @@
             const [tableSearch, setTableSearch] = useState('');
             const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
             const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-
             const [toast, setToast] = useState(null);
+            const [isDownloading, setIsDownloading] = useState(false);
             const [nameWidth, setNameWidth] = useState(240);
             const isResizing = useRef(false);
-
             const donutChartRef = useRef(null);
             const donutChartInstance = useRef(null);
 
@@ -247,18 +177,24 @@
                 else document.documentElement.classList.remove('dark');
             }, [isDark]);
 
+            // ── Carga estadísticas globales ──
             useEffect(() => {
-                fetch('/api/estadisticas', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_BASE}/api/estadisticas`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
                     .then(res => res.json())
                     .then(data => { if (Array.isArray(data)) setSummaryData(data); })
                     .catch(err => console.error("Error estadísticas:", err));
             }, [token]);
 
+            // ── Carga datos de tabla seleccionada ──
             useEffect(() => {
                 if (tableFilter) {
                     setTableData([]);
                     setSortConfig({ key: null, direction: 'asc' });
-                    fetch(`/api/datos/${tableFilter}`, { headers: { 'Authorization': `Bearer ${token}` } })
+                    fetch(`${API_BASE}/api/datos/${tableFilter}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
                         .then(res => res.json())
                         .then(data => { if (Array.isArray(data)) setTableData(data); })
                         .catch(err => console.error("Error datos:", err));
@@ -275,10 +211,7 @@
                     return { total, complete, enRevision, incomplete, percentComplete: total === 0 ? 0 : parseFloat(((complete / total) * 100).toFixed(2)), isGlobal: true };
                 } else {
                     let total = tableData.length;
-                    let completeRows = 0;
-                    let enRevisionRows = 0;
-                    let incompleteRows = 0;
-
+                    let completeRows = 0, enRevisionRows = 0, incompleteRows = 0;
                     tableData.forEach(row => {
                         const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
                         let isRowIncomplete = false;
@@ -286,15 +219,9 @@
                             const val = row[k];
                             if (val === null || val === undefined || val.toString().trim() === '') isRowIncomplete = true;
                         });
-
-                        // Lógica ajustada: Si está 100% completo ignora el tag de En Revisión
-                        if (!isRowIncomplete) {
-                            completeRows++;
-                        } else if (row.auditoria_estado === 'En revisión') {
-                            enRevisionRows++;
-                        } else {
-                            incompleteRows++;
-                        }
+                        if (!isRowIncomplete) completeRows++;
+                        else if (row.auditoria_estado === 'En revisión') enRevisionRows++;
+                        else incompleteRows++;
                     });
                     return { total, complete: completeRows, enRevision: enRevisionRows, incomplete: incompleteRows, percentComplete: total === 0 ? 0 : Math.round((completeRows / total) * 100), isGlobal: false };
                 }
@@ -303,8 +230,7 @@
             const processedRows = useMemo(() => {
                 return tableData.map(row => {
                     const editableKeys = Object.keys(row).filter(k => !EXCLUDED_FIELDS.includes(k.toLowerCase()));
-                    let filledCount = 0;
-                    let missingFieldsCount = 0;
+                    let filledCount = 0, missingFieldsCount = 0;
                     editableKeys.forEach(k => {
                         const val = row[k];
                         if (val !== null && val !== undefined && val.toString().trim() !== '') filledCount++;
@@ -313,14 +239,9 @@
                     const numCampos = editableKeys.length;
                     const percent = numCampos === 0 ? 100 : parseFloat(((filledCount / numCampos) * 100).toFixed(2));
                     const nombreValor = row.nombre || row.name || row.titulo || row.title || `Reg #${row.id || '-'}`;
-
                     let fechaMod = "---";
-                    if (row.fecha_actualizacion) {
-                        fechaMod = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES');
-                    } else if (row.fecha_creacion) {
-                        fechaMod = new Date(row.fecha_creacion).toLocaleDateString('es-ES');
-                    }
-
+                    if (row.fecha_actualizacion) fechaMod = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES');
+                    else if (row.fecha_creacion) fechaMod = new Date(row.fecha_creacion).toLocaleDateString('es-ES');
                     return { ...row, _meta: { nombreValor, numCampos, missingFieldsCount, percent, editableKeys, fechaMod, isComplete: missingFieldsCount === 0 } };
                 });
             }, [tableData]);
@@ -373,8 +294,7 @@
                 const names = filteredAndSortedRows.map(r => r._meta.nombreValor);
                 if (names.length === 0) return;
                 const longestName = names.reduce((a, b) => a.length > b.length ? a : b);
-                const estimatedWidth = (longestName.length * 8.5) + 32;
-                setNameWidth(Math.max(150, Math.min(estimatedWidth, 600)));
+                setNameWidth(Math.max(150, Math.min((longestName.length * 8.5) + 32, 600)));
             };
 
             useEffect(() => {
@@ -389,9 +309,9 @@
                             datasets: [{
                                 data: [dashboardStats.complete, dashboardStats.enRevision, dashboardStats.incomplete],
                                 backgroundColor: [
-                                    isDark ? '#34d399' : '#059669', // Verde
-                                    isDark ? '#fbbf24' : '#d97706', // Amarillo
-                                    isDark ? '#f87171' : '#dc2626'  // Rojo
+                                    isDark ? '#34d399' : '#059669',
+                                    isDark ? '#fbbf24' : '#d97706',
+                                    isDark ? '#f87171' : '#dc2626'
                                 ],
                                 borderWidth: 0, cutout: '80%'
                             }]
@@ -407,6 +327,7 @@
                     .sort((a, b) => b.percent - a.percent);
             }, [summaryData]);
 
+            // ── Exportar tabla completa a Excel (cliente) ──
             const exportTableToExcel = () => {
                 if (!tableFilter || filteredAndSortedRows.length === 0) return;
                 const wb = XLSX.utils.book_new();
@@ -419,57 +340,60 @@
                 XLSX.writeFile(wb, `Reporte_Calidad_${tableFilter}.xlsx`);
             };
 
+            // ── Descargar Excel de revisión (lo genera el backend) ──
             const exportFormToExcel = async () => {
-                if (!selectedRecord) return;
+                if (!selectedRecord || isDownloading) return;
+                setIsDownloading(true);
 
                 try {
-                    const response = await fetch('/api/auditoria/descarga', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            tabla: tableFilter,
-                            registro_id: selectedRecord.id
-                        })
-                    });
+                    // ✅ PRODUCCIÓN: el backend genera el Excel con diseño profesional
+                    //    y registra la auditoría en un solo paso
+                    const response = await fetch(
+                        `${API_BASE}/api/auditoria/excel/${tableFilter}/${selectedRecord.id}`,
+                        { headers: { 'Authorization': `Bearer ${token}` } }
+                    );
 
-                    if (response.ok) {
-                        setTableData(prevData => prevData.map(row =>
-                            row.id === selectedRecord.id
-                                ? { ...row, auditoria_estado: 'En revisión' }
-                                : row
-                        ));
-
-                        setSelectedRecord(prev => ({ ...prev, auditoria_estado: 'En revisión' }));
-
-                        setToast({ type: 'success', message: 'Registro puesto "En revisión" correctamente.' });
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        setToast({ type: 'error', message: err.message || 'Error al generar el Excel.' });
                         setTimeout(() => setToast(null), 5000);
-                    } else {
-                        const errData = await response.json();
-                        setToast({ type: 'error', message: errData.message || 'Error al actualizar AWS.' });
-                        setTimeout(() => setToast(null), 5000);
+                        setIsDownloading(false);
+                        return;
                     }
+
+                    // Descargar el blob como archivo
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Plantilla_${selectedRecord._meta.nombreValor.replace(/[^a-zA-Z0-9_\- ]/g, '').trim().replace(/ /g, '_')}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+
+                    // Actualizar estado en UI sin recargar
+                    setTableData(prev => prev.map(row =>
+                        row.id === selectedRecord.id ? { ...row, auditoria_estado: 'En revisión' } : row
+                    ));
+                    setSelectedRecord(prev => ({ ...prev, auditoria_estado: 'En revisión' }));
+
+                    setToast({ type: 'success', message: 'Excel generado y registro puesto "En revisión".' });
+                    setTimeout(() => setToast(null), 5000);
+
                 } catch (err) {
-                    console.error("No se pudo auditar la descarga:", err);
+                    console.error('Error descargando Excel:', err);
                     setToast({ type: 'error', message: 'Error de conexión con el servidor.' });
                     setTimeout(() => setToast(null), 5000);
+                } finally {
+                    setIsDownloading(false);
                 }
-
-                const wb = XLSX.utils.book_new();
-                const data = [["CAMPO FÍSICO", "VALOR ACTUAL EN SISTEMA", "NUEVO VALOR (ACTUALIZACIÓN)"]];
-                selectedRecord._meta.editableKeys.forEach(k => {
-                    data.push([k.toUpperCase(), selectedRecord[k] || "--- VACÍO ---", ""]);
-                });
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "Formulario");
-                XLSX.writeFile(wb, `Plantilla_Edicion_${selectedRecord._meta.nombreValor}.xlsx`);
             };
 
             return (
                 <div className="flex flex-col h-screen relative">
 
-                    {/* 🔔 TOAST NOTIFICATION */}
+                    {/* 🔔 TOAST */}
                     {toast && (
                         <div className="fixed top-20 right-6 z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl overflow-hidden flex flex-col min-w-[300px] border border-warm-100 dark:border-gray-700 slide-up">
                             <div className="p-4 flex items-center gap-3">
@@ -482,9 +406,7 @@
                                         <i className="ph-fill ph-warning-circle text-xl"></i>
                                     </div>
                                 )}
-                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                    {toast.message}
-                                </span>
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{toast.message}</span>
                             </div>
                             <div className="h-1.5 w-full bg-warm-100 dark:bg-gray-700">
                                 <div className={`h-full ${toast.type === 'success' ? 'bg-green-500' : 'bg-primary'} animate-toast-progress`}></div>
@@ -492,6 +414,7 @@
                         </div>
                     )}
 
+                    {/* HEADER */}
                     <header className="h-14 bg-navy-dark border-b-[3px] border-primary flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
                         <div className="flex items-center space-x-5">
                             <div className="flex items-center space-x-3">
@@ -511,6 +434,7 @@
                     </header>
 
                     <div className="flex-1 flex overflow-hidden">
+                        {/* SIDEBAR */}
                         <aside className="w-64 bg-white dark:bg-gray-800 border-r border-warm-100 dark:border-gray-700 flex flex-col z-20 shrink-0 shadow-sm">
                             <div className="p-4 space-y-4">
                                 <div className="space-y-2">
@@ -527,9 +451,7 @@
                                         ))}
                                     </select>
                                 </div>
-
                                 <div className="h-px bg-warm-100 dark:bg-gray-700"></div>
-
                                 <nav className="space-y-1">
                                     <button onClick={() => { setCurrentView('dashboard'); setTableFilter(''); }} className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${currentView === 'dashboard' ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-warm-100 dark:hover:bg-gray-700/50'}`}>
                                         <i className="ph ph-house-line text-lg mr-3"></i> Home
@@ -539,7 +461,6 @@
                                     </button>
                                 </nav>
                             </div>
-
                             <div className="mt-auto p-4 border-t border-warm-100 dark:border-gray-700">
                                 <div className="flex items-center justify-between px-2">
                                     <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Tema</span>
@@ -550,7 +471,10 @@
                             </div>
                         </aside>
 
+                        {/* MAIN */}
                         <main className="flex-1 overflow-y-auto p-6 bg-transparent dark:bg-gray-900/40 transition-all custom-scrollbar">
+
+                            {/* VISTA DASHBOARD */}
                             {currentView === 'dashboard' && dashboardStats && (
                                 <div className="max-w-5xl mx-auto space-y-6 fade-in">
                                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700 relative overflow-hidden group">
@@ -572,32 +496,31 @@
                                             </div>
                                             <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud Global</span>
                                         </div>
-
                                         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-green-500">Completos</div>
+                                                    <div className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Completos</div>
                                                     <div className="text-2xl font-black text-green-500">{dashboardStats.complete.toLocaleString()}</div>
                                                 </div>
                                                 <i className="ph-fill ph-shield-check text-green-500 text-2xl opacity-80"></i>
                                             </div>
-                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-amber-500">En Revisión</div>
+                                                    <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">En Revisión</div>
                                                     <div className="text-2xl font-black text-amber-500">{dashboardStats.enRevision.toLocaleString()}</div>
                                                 </div>
                                                 <i className="ph-fill ph-clock text-amber-500 text-2xl opacity-80"></i>
                                             </div>
-                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-primary">Incompletos</div>
+                                                    <div className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Incompletos</div>
                                                     <div className="text-2xl font-black text-primary">{dashboardStats.incomplete.toLocaleString()}</div>
                                                 </div>
                                                 <i className="ph-fill ph-warning-circle text-primary text-2xl opacity-80"></i>
                                             </div>
-                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center group">
+                                            <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center">
                                                 <div>
-                                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-blue-500">Total AWS</div>
+                                                    <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total AWS</div>
                                                     <div className="text-2xl font-black text-blue-500">{dashboardStats.total.toLocaleString()}</div>
                                                 </div>
                                                 <i className="ph-fill ph-database text-blue-500 text-2xl opacity-80"></i>
@@ -625,6 +548,7 @@
                                 </div>
                             )}
 
+                            {/* VISTA DATOS */}
                             {currentView === 'data' && tableFilter && (
                                 <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-4">
                                     <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-warm-100 dark:border-gray-700 shadow-sm gap-4">
@@ -638,10 +562,7 @@
                                                 <span>Faltantes</span>
                                             </label>
                                         </div>
-                                        <button 
-                                            onClick={exportTableToExcel}
-                                            className="flex items-center justify-center w-full md:w-auto px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95"
-                                        >
+                                        <button onClick={exportTableToExcel} className="flex items-center justify-center w-full md:w-auto px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95">
                                             <i className="ph-bold ph-file-xls mr-2 text-lg"></i>
                                             <span>Exportar Excel</span>
                                         </button>
@@ -656,12 +577,7 @@
                                                         <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('auditoria_estado')}>Auditoría</th>
                                                         <th className="py-3 px-4 relative group" style={{ width: nameWidth }}>
                                                             <div className="cursor-pointer hover:text-primary" onClick={() => handleSort('nombreValor')}>Nombre</div>
-                                                            <div
-                                                                className={`resizer ${isResizing.current ? 'is-resizing' : ''}`}
-                                                                onMouseDown={startResizing}
-                                                                onDoubleClick={autoResize}
-                                                                title="Arrastra para redimensionar o doble clic para autoajustar"
-                                                            ></div>
+                                                            <div className={`resizer ${isResizing.current ? 'is-resizing' : ''}`} onMouseDown={startResizing} onDoubleClick={autoResize} title="Arrastra para redimensionar"></div>
                                                         </th>
                                                         <th className="py-3 px-4 text-center cursor-pointer hover:text-primary" onClick={() => handleSort('missingFieldsCount')}>Faltantes</th>
                                                         <th className="py-3 px-4 cursor-pointer hover:text-primary" onClick={() => handleSort('percent')}>Progreso</th>
@@ -678,23 +594,15 @@
                                                                 </span>
                                                             </td>
                                                             <td className="py-2.5 px-4">
-                                                                {/* Lógica condicional: Si no está completo, muestra estado estricto */}
                                                                 {!row._meta.isComplete && (
-                                                                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${row.auditoria_estado === 'En revisión'
-                                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800'
-                                                                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                                                                        }`}>
+                                                                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${row.auditoria_estado === 'En revisión' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'}`}>
                                                                         <i className={`ph-fill ${row.auditoria_estado === 'En revisión' ? 'ph-clock' : 'ph-info'} mr-1.5 text-lg`}></i>
                                                                         {row.auditoria_estado === 'En revisión' ? 'En revisión' : 'Sin revisar'}
                                                                     </span>
                                                                 )}
                                                             </td>
-                                                            <td className="py-2.5 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>
-                                                                {row._meta.nombreValor}
-                                                            </td>
-                                                            <td className="py-2.5 px-4 text-center">
-                                                                <span className="font-bold text-gray-400">{row._meta.missingFieldsCount}</span>
-                                                            </td>
+                                                            <td className="py-2.5 px-4 font-bold text-gray-900 dark:text-gray-100 truncate" style={{ maxWidth: nameWidth }}>{row._meta.nombreValor}</td>
+                                                            <td className="py-2.5 px-4 text-center"><span className="font-bold text-gray-400">{row._meta.missingFieldsCount}</span></td>
                                                             <td className="py-2.5 px-4 w-48">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="flex-1 h-1.5 bg-warm-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
@@ -703,9 +611,7 @@
                                                                     <span className="text-[10px] font-black w-6 text-right" style={{ color: getSolidColor(row._meta.percent, isDark) }}>{row._meta.percent}%</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2.5 px-4 text-center text-gray-400 font-medium">
-                                                                {row._meta.fechaMod}
-                                                            </td>
+                                                            <td className="py-2.5 px-4 text-center text-gray-400 font-medium">{row._meta.fechaMod}</td>
                                                             <td className="py-2.5 px-4 text-center">
                                                                 <button onClick={() => setSelectedRecord(row)} className="p-2 bg-warm-100 dark:bg-gray-700 rounded-lg hover:text-primary transition-all active:scale-90 shadow-sm">
                                                                     <i className="ph-bold ph-eye text-lg"></i>
@@ -722,10 +628,10 @@
                         </main>
                     </div>
 
+                    {/* MODAL DETALLE */}
                     {selectedRecord && (
                         <div className="fixed inset-0 bg-navy-dark/95 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 fade-in">
                             <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-white/5 slide-up">
-
                                 <div className="p-6 border-b border-warm-100 dark:border-gray-700 flex justify-between items-center bg-warm-50/50 dark:bg-gray-900/20">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-inner">
@@ -733,23 +639,15 @@
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-3">
-                                                <h3 className="font-black text-lg tracking-tight text-gray-900 dark:text-white leading-none">
-                                                    {selectedRecord._meta.nombreValor}
-                                                </h3>
-                                                {/* Lógica condicional: Si no está completo, muestra estado estricto */}
+                                                <h3 className="font-black text-lg tracking-tight text-gray-900 dark:text-white leading-none">{selectedRecord._meta.nombreValor}</h3>
                                                 {!selectedRecord._meta.isComplete && (
-                                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${selectedRecord.auditoria_estado === 'En revisión'
-                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'
-                                                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50'
-                                                        }`}>
+                                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${selectedRecord.auditoria_estado === 'En revisión' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50'}`}>
                                                         <i className={`ph-fill ${selectedRecord.auditoria_estado === 'En revisión' ? 'ph-clock' : 'ph-info'} mr-1`}></i>
                                                         {selectedRecord.auditoria_estado === 'En revisión' ? 'En revisión' : 'Sin revisar'}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1.5">
-                                                ID Registro: {selectedRecord.id || 'Nuevo'}
-                                            </p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1.5">ID Registro: {selectedRecord.id || 'Nuevo'}</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setSelectedRecord(null)} className="p-2 bg-warm-100 dark:bg-gray-700 rounded-xl text-gray-500 hover:text-primary transition-all">
@@ -763,9 +661,7 @@
                                         const isDescription = key.toLowerCase().includes('desc') || key.toLowerCase().includes('text') || (val && val.length > 120);
                                         return (
                                             <div key={key} className={`${isDescription ? 'sm:col-span-2' : ''} space-y-1.5`}>
-                                                <label className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest ml-1">
-                                                    {translateField(key)}
-                                                </label>
+                                                <label className="text-[9px] font-black uppercase text-gray-400 dark:text-gray-500 tracking-widest ml-1">{translateField(key)}</label>
                                                 {isDescription ? (
                                                     <div className="p-4 bg-warm-50/50 dark:bg-gray-900/50 rounded-2xl text-xs border border-warm-100 dark:border-gray-700/50 font-medium leading-relaxed max-h-[150px] overflow-y-auto custom-scrollbar italic text-gray-600 dark:text-gray-300 shadow-inner">
                                                         {val || 'Sin descripción detallada.'}
@@ -785,12 +681,27 @@
                                         <div className="h-1.5 w-28 bg-warm-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
                                             <div className="h-full transition-all duration-1000" style={{ width: `${selectedRecord._meta.percent}%`, backgroundColor: getSolidColor(selectedRecord._meta.percent, isDark) }}></div>
                                         </div>
-                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>
-                                            {selectedRecord._meta.percent}% Completado
-                                        </span>
+                                        <span className="text-[10px] font-black" style={{ color: getSolidColor(selectedRecord._meta.percent, isDark) }}>{selectedRecord._meta.percent}% Completado</span>
                                     </div>
-                                    <button onClick={exportFormToExcel} className="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[11px] font-black flex items-center justify-center shadow-md active:scale-95 transition-all">
-                                        <i className="ph-bold ph-microsoft-excel-logo mr-2 text-lg"></i> Descargar Excel para Revisión
+                                    <button
+                                        onClick={exportFormToExcel}
+                                        disabled={isDownloading}
+                                        className="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-wait text-white rounded-xl text-[11px] font-black flex items-center justify-center shadow-md active:scale-95 transition-all gap-2"
+                                    >
+                                        {isDownloading ? (
+                                            <>
+                                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                                </svg>
+                                                Generando ...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="ph-bold ph-microsoft-excel-logo text-lg"></i>
+                                                Descargar Excel para Revisión
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -807,15 +718,16 @@
             const [error, setError] = useState('');
             const [token, setToken] = useState('');
 
-            // Mantengo el inicio oscuro por defecto como estaba
             useEffect(() => { document.documentElement.classList.add('dark'); }, []);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
                 try {
-                    const res = await fetch('/api/auth/login', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password })
+                    const res = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
                     });
                     const data = await res.json();
                     if (res.ok) { setToken(data.token); setIsAuthenticated(true); }
@@ -833,7 +745,11 @@
                                 <h2 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Acceso Auditoría</h2>
                                 <p className="text-gray-400 mt-2 font-black text-[10px] uppercase tracking-[0.2em]">Data Quality Manager</p>
                             </div>
-                            {error && <div className="bg-red-500/10 text-primary p-4 rounded-2xl text-[10px] font-black mb-6 flex items-center gap-3 border border-primary/20"><i className="ph-fill ph-warning-circle text-xl"></i> {error}</div>}
+                            {error && (
+                                <div className="bg-red-500/10 text-primary p-4 rounded-2xl text-[10px] font-black mb-6 flex items-center gap-3 border border-primary/20">
+                                    <i className="ph-fill ph-warning-circle text-xl"></i> {error}
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Identificador</label>
@@ -843,7 +759,9 @@
                                     <label className="text-[10px] font-black uppercase text-gray-400 ml-3 tracking-widest">Credencial</label>
                                     <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 font-bold transition-all text-xs" />
                                 </div>
-                                <button type="submit" className="w-full bg-primary hover:bg-primary-600 text-white py-4 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95 mt-4">Iniciar Sesión</button>
+                                <button type="submit" className="w-full bg-primary hover:bg-primary-600 text-white py-4 rounded-2xl font-black text-base shadow-xl transition-all active:scale-95 mt-4">
+                                    Iniciar Sesión
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -856,5 +774,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
