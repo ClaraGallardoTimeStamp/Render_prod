@@ -43,41 +43,125 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        .slide-up { animation: slideUp 0.3s ease-out; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); } }
-        
-        @keyframes toastProgress { from { width: 100%; } to { width: 0%; } }
-        .animate-toast-progress { animation: toastProgress 5s linear forwards; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        .pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+
+            to {
+                width: 0%;
+            }
+        }
+
+        .animate-toast-progress {
+            animation: toastProgress 5s linear forwards;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+
+        .pill-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         .resizer {
-            position: absolute; right: 0; top: 0; height: 100%; width: 4px; background: rgba(0, 0, 0, 0.05);
-            cursor: col-resize; user-select: none; touch-action: none; transition: background 0.2s;
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+            transition: background 0.2s;
         }
-        .dark .resizer { background: rgba(255, 255, 255, 0.05); }
-        .resizer:hover, .resizer.is-resizing { background: #EB1C23; width: 4px; }
+
+        .dark .resizer {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .resizer:hover,
+        .resizer.is-resizing {
+            background: #EB1C23;
+            width: 4px;
+        }
     </style>
 </head>
 
-<body class="bg-warm-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
+<body
+    class="bg-warm-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-200 overflow-hidden flex flex-col h-screen">
 
     <div id="root" class="h-full flex flex-col"></div>
 
@@ -202,7 +286,7 @@
                             const val = row[k];
                             if (val === null || val === undefined || val.toString().trim() === '') isRowIncomplete = true;
                         });
-                        
+
                         // Lógica ajustada: Si está 100% completo ignora el tag de En Revisión
                         if (!isRowIncomplete) {
                             completeRows++;
@@ -350,15 +434,15 @@
                             registro_id: selectedRecord.id
                         })
                     });
-                    
-                    if(response.ok) {
-                        setTableData(prevData => prevData.map(row => 
-                            row.id === selectedRecord.id 
-                                ? { ...row, auditoria_estado: 'En revisión' } 
+
+                    if (response.ok) {
+                        setTableData(prevData => prevData.map(row =>
+                            row.id === selectedRecord.id
+                                ? { ...row, auditoria_estado: 'En revisión' }
                                 : row
                         ));
-                        
-                        setSelectedRecord(prev => ({...prev, auditoria_estado: 'En revisión'}));
+
+                        setSelectedRecord(prev => ({ ...prev, auditoria_estado: 'En revisión' }));
 
                         setToast({ type: 'success', message: 'Registro puesto "En revisión" correctamente.' });
                         setTimeout(() => setToast(null), 5000);
@@ -384,7 +468,7 @@
 
             return (
                 <div className="flex flex-col h-screen relative">
-                    
+
                     {/* 🔔 TOAST NOTIFICATION */}
                     {toast && (
                         <div className="fixed top-20 right-6 z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl overflow-hidden flex flex-col min-w-[300px] border border-warm-100 dark:border-gray-700 slide-up">
@@ -488,7 +572,7 @@
                                             </div>
                                             <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">Salud Global</span>
                                         </div>
-                                        
+
                                         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                             <div className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center group">
                                                 <div>
@@ -554,8 +638,12 @@
                                                 <span>Faltantes</span>
                                             </label>
                                         </div>
-                                        <button onClick={exportTableToExcel} className="w-full md:w-auto px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95">
-                                            <i className="ph-bold ph-file-xls mr-2 text-lg"></i> Exportar Excel
+                                        <button 
+                                            onClick={exportTableToExcel}
+                                            className="flex items-center justify-center w-full md:w-auto px-5 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-black rounded-xl transition-all shadow-md active:scale-95"
+                                        >
+                                            <i className="ph-bold ph-file-xls mr-2 text-lg"></i>
+                                            <span>Exportar Excel</span>
                                         </button>
                                     </div>
 
@@ -651,8 +739,8 @@
                                                 {/* Lógica condicional: Si no está completo, muestra estado estricto */}
                                                 {!selectedRecord._meta.isComplete && (
                                                     <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${selectedRecord.auditoria_estado === 'En revisión'
-                                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'
-                                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50'
+                                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30'
+                                                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50'
                                                         }`}>
                                                         <i className={`ph-fill ${selectedRecord.auditoria_estado === 'En revisión' ? 'ph-clock' : 'ph-info'} mr-1`}></i>
                                                         {selectedRecord.auditoria_estado === 'En revisión' ? 'En revisión' : 'Sin revisar'}
