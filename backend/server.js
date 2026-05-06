@@ -62,16 +62,16 @@ const authenticateToken = (req, res, next) => {
 // ==========================================
     // Mientras no uses JWT real, aceptamos el token-falso del login mock
 
-    //req.user = { email: token === 'token-falso' ? 'admin@timestamp.es' : 'consultor@timestamp.es' };
-    //next();
+    req.user = { email: token === 'token-falso' ? 'admin@timestamp.es' : 'consultor@timestamp.es' };
+    next();
 //};
 
 // ==========================================
 // 🛑 MODO LOCAL — descomenta este bloque y
 //    comenta el de arriba para desarrollo
 // ==========================================
-        req.user = { email: 'admin@local.com' };
-        next();
+ //       req.user = { email: 'admin@local.com' };
+//        next();
     };
 
 
