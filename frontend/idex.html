@@ -248,7 +248,7 @@
             }, [isDark]);
 
             useEffect(() => {
-                fetch('http://localhost:3000/api/estadisticas', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch('/api/estadisticas', { headers: { 'Authorization': `Bearer ${token}` } })
                     .then(res => res.json())
                     .then(data => { if (Array.isArray(data)) setSummaryData(data); })
                     .catch(err => console.error("Error estadísticas:", err));
@@ -258,7 +258,7 @@
                 if (tableFilter) {
                     setTableData([]);
                     setSortConfig({ key: null, direction: 'asc' });
-                    fetch(`http://localhost:3000/api/datos/${tableFilter}`, { headers: { 'Authorization': `Bearer ${token}` } })
+                    fetch(`/api/datos/${tableFilter}`, { headers: { 'Authorization': `Bearer ${token}` } })
                         .then(res => res.json())
                         .then(data => { if (Array.isArray(data)) setTableData(data); })
                         .catch(err => console.error("Error datos:", err));
@@ -423,7 +423,7 @@
                 if (!selectedRecord) return;
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/auditoria/descarga', {
+                    const response = await fetch('/api/auditoria/descarga', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -814,7 +814,7 @@
                 e.preventDefault();
                 setError('');
                 try {
-                    const res = await fetch('http://localhost:3000/api/auth/login', {
+                    const res = await fetch('/api/auth/login', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password })
                     });
                     const data = await res.json();

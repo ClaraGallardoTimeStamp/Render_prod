@@ -13,6 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const path = require('path');
+
+// Sirve el frontend estático
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 // --- CHIVATO PARA DETECTAR ERRORES CON .env ---
 if (!process.env.DB_HOST) {
     console.error("❌ ERROR CRÍTICO: No se han detectado las variables de AWS.");
@@ -219,15 +224,9 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor backend conectado a AWS (${process.env.DB_HOST}) en el puerto ${PORT}`);
 });
 
-// Subida a Render.com
+app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, '../frontend', 'idex.html'));
+    }
+});
 
-const express = require('express');
-const app = express();
-
-// Esto hace que Node sirva la carpeta donde tienes tu HTML
-app.use(express.static('frontend')); 
-
-// ... el resto de tu código de AWS ...
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
