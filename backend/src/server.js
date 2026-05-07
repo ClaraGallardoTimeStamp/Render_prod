@@ -55,7 +55,7 @@ const authenticateToken = (req, res, next) => {
     //     req.user = user;
     //     next();
     // });
-
+/*
 // ==========================================
 // 🟢 MODO PROD — descomenta este bloque y
 //    comenta el de arriba para desarrollo
@@ -65,13 +65,13 @@ const authenticateToken = (req, res, next) => {
     req.user = { email: token === 'token-falso' ? 'admin@timestamp.es' : 'consultor@timestamp.es' };
     next();
 //};
-
+*/
 // ==========================================
 // 🛑 MODO LOCAL — descomenta este bloque y
 //    comenta el de arriba para desarrollo
 // ==========================================
- //       req.user = { email: 'admin@local.com' };
-//        next();
+        req.user = { email: 'admin@local.com' };
+        next();
     };
 
 
@@ -177,7 +177,7 @@ Campos a clasificar: ${campos.join(', ')}`
     } catch (err) {
         console.error('⚠️  Error al categorizar con Claude, usando fallback:', err.message);
         // Fallback: todos los campos en un grupo genérico
-        return { 'CAMPOS DEL REGISTRO': campos };
+        return { 'CAMPOS': campos };
     }
 }
 
@@ -255,7 +255,7 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
     sub2.value = `ID Registro: ${id}`;
     sub2.font = { name: 'Segoe UI', size: 8, color: { argb: '64748B' } };
     sub2.alignment = { vertical: 'middle' };
-/*
+/*d
     // Botones simulados en columna D
     const btn1 = ws.getCell('D2');
     btn1.value = '▶  GUARDAR CAMBIOS';
@@ -596,7 +596,7 @@ app.get('/api/auditoria/excel/:tabla/:id', authenticateToken, async (req, res) =
 // ==========================================
 app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, '../frontend', 'idex.html'));
+        res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
     } else {
         next();
     }
