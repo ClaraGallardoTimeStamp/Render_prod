@@ -6,7 +6,7 @@ import './styles/tailwind.css';
 import './styles/globals.css';
 
 // Importamos nuestras pantallas
-import { Login } from './app/Login.tsx';
+import { Login } from './app/Login';
 import { DataAnalysis } from './app/DataAnalysis';
 
 export function App() {

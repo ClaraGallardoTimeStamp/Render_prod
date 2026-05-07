@@ -12,6 +12,8 @@ export function Login() {
     // Herramienta para navegar a otras rutas
     const navigate = useNavigate();
 
+    
+    // FUNCION DE LOGIN SIMULADA 🔴
     // Función que se ejecuta al darle a "Iniciar Sesión"
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +28,53 @@ export function Login() {
             setError('Credenciales incorrectas');
         }
     };
+    /*
 
+    // Añadimos 'async' porque vamos a hacer una llamada a internet y tenemos que 'esperar' la respuesta
+    const handleSubmit = async (e: React.FormEvent) => {
+        // Evitamos que el navegador recargue la página entera (comportamiento por defecto del HTML)
+        e.preventDefault();
+        // Limpiamos los errores previos
+        setError('');
+
+        try {
+            // 1. Leemos la URL del backend desde nuestro nuevo archivo .env
+            // Si por algún motivo no existe, usamos localhost por defecto por seguridad
+            const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+
+            // 2. Hacemos la llamada HTTP (fetch) a tu backend
+            const response = await fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST', // Usamos POST porque estamos enviando datos sensibles
+                headers: {
+                    'Content-Type': 'application/json' // Le decimos al backend que le enviamos un JSON
+                },
+                // Convertimos nuestras variables de estado (email y password) a un texto JSON
+                body: JSON.stringify({ email, password })
+            });
+
+            // 3. Traducimos la respuesta del backend de texto JSON a un objeto JavaScript
+            const data = await response.json();
+
+            // 4. Comprobamos si el servidor nos dijo que el login fue correcto (código 200)
+            if (response.ok) {
+                // ¡Éxito! Guardamos el token de seguridad que nos da el backend en la memoria del navegador
+                localStorage.setItem('token', data.token);
+                // Guardamos también el email para mostrarlo arriba a la derecha en la cabecera
+                localStorage.setItem('userEmail', email);
+
+                // Viajamos a la pantalla del panel de control
+                navigate('/analisis');
+            } else {
+                // Si el backend nos devolvió un error (ej. contraseña mal), mostramos el mensaje que venga del backend
+                setError(data.message || 'Error al iniciar sesión');
+            }
+        } catch (err) {
+            // Si el servidor está apagado o no hay internet, entramos aquí
+            setError('No se pudo conectar con el servidor. ¿Está el backend encendido?');
+        }
+    };
+
+*/
     return (
         // Fíjate que class se ha convertido en className. 
         // Es el mismo diseño exacto que tenías en tu index.html
