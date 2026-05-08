@@ -3,6 +3,8 @@
 import { useState } from 'react';
 // 2. Importamos useNavigate (una herramienta del router) para cambiar de página tras el login
 import { useNavigate } from 'react-router-dom';
+import logoBadajoz from '../../assets/badajoz.svg';
+import logoRed from '../../assets/logo-red.svg';
 
 export function Login() {
     const [email, setEmail] = useState('');
@@ -12,7 +14,7 @@ export function Login() {
     // Herramienta para navegar a otras rutas
     const navigate = useNavigate();
 
-    
+
     // FUNCION DE LOGIN SIMULADA 🔴
     // Función que se ejecuta al darle a "Iniciar Sesión"
     const handleSubmit = async (e: React.FormEvent) => {
@@ -76,9 +78,13 @@ export function Login() {
 
 */
     return (
-       
+
         <div className="relative flex min-h-screen items-center justify-center lg:justify-end overflow-hidden bg-[#0d1117] p-4 lg:pr-20 xl:pr-32">
-            {/* Fondo e imagen... */}
+            <div className="flex items-center space-x-3">
+                {/* Usamos las variables importadas en el atributo src */}
+                <img src={logoBadajoz} alt="Badajoz" className="h-7 object-contain dark:invert" />
+                <img src={logoRed} alt="Timestamp" className="h-7 object-contain" />
+            </div>
             <div className="relative z-10 w-full sm:max-w-[420px] p-8 sm:p-10 bg-[#1C232D] rounded-[32px] shadow-2xl border border-white/5">
 
                 {/* Mostramos el error si existe */}

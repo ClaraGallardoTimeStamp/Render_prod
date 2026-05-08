@@ -607,5 +607,5 @@ app.use((req, res, next) => {
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`✅ Servidor conectado a AWS (${process.env.DB_HOST}) en el puerto ${PORT}`);
-});
+    console.log(`✅ Servidor conectado a AWS (${process.env.DB_HOST}) en el puerto ${PORT}`)
+})

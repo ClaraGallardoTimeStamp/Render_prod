@@ -176,6 +176,44 @@ export function DataAnalysis() {
         navigate('/login');
     };
 
+    const handleDownloadRevisionExcel = async (tabla: string, id: string, nombre: string) => {
+        setIsExporting(true);
+        try {
+            const response = await fetch(`${API_BASE}/api/auditoria/excel/${tabla}/${id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error("Error al generar el Excel profesional");
+
+            // Convertimos la respuesta en un archivo (Blob)
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Creamos un enlace temporal para forzar la descarga
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Revision_${nombre.replace(/\s+/g, '_')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiamos
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("Error descargando Excel:", err);
+            alert("No se pudo generar el Excel de revisión.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+
+    // 🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽 
+    // 🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽 
+    // 🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽🔽 
+
+
     return (
         <div className={`flex flex-col h-screen ${isDark ? 'dark bg-gray-900' : 'bg-warm-50'}`}>
             <Header userEmail={userEmail} onLogout={handleLogout} />
@@ -232,39 +270,10 @@ export function DataAnalysis() {
                 isOpen={!!selectedRow}
                 data={selectedRow}
                 onClose={() => setSelectedRow(null)}
+                // 👇 3. ¡IMPORTANTE! Le pasamos la función al modal para que el botón interno pueda usarla 👇
+                onDownloadExcel={handleDownloadRevisionExcel} 
             />
         </div>
     );
 
-    const handleDownloadRevisionExcel = async (tabla: string, id: string, nombre: string) => {
-        setIsExporting(true);
-        try {
-            const response = await fetch(`${API_BASE}/api/auditoria/excel/${tabla}/${id}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error("Error al generar el Excel profesional");
-
-            // Convertimos la respuesta en un archivo (Blob)
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-
-            // Creamos un enlace temporal para forzar la descarga
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Revision_${nombre.replace(/\s+/g, '_')}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-
-            // Limpiamos
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (err) {
-            console.error("Error descargando Excel:", err);
-            alert("No se pudo generar el Excel de revisión.");
-        } finally {
-            setIsExporting(false);
-        }
-    };
 }
