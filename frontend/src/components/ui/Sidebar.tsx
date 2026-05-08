@@ -10,6 +10,14 @@ interface SidebarProps {
   setIsDark: (val: boolean) => void;
   currentView: string;
   setCurrentView: (view: string) => void;
+  locationFilter: string;
+  setLocationFilter: (val: string) => void;
+  tableFilter: string;
+  setTableFilter: (val: string) => void;
+  availableLocalities: string[];
+  availableCategories: string[];
+  isExporting: boolean;
+  onExport: () => void;
 }
 
 // 3. Creamos el componente recibiendo esas propiedades
