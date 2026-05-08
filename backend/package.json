@@ -2,7 +2,7 @@
   "name": "auditoria-badajoz",
   "version": "1.0.0",
   "scripts": {
-    "start": "node SErver.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"

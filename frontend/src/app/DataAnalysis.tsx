@@ -16,29 +16,30 @@ const extractAndNormalizeLocation = (row: any): string => {
     if (!row) return '';
 
     // 1. Búsqueda profunda: Escaneamos la raíz y los objetos anidados comunes
-    const rawLoc = row.localidad || 
-                   row.locality || 
-                   row._meta?.localidad || 
-                   row._meta?.locality || 
-                   row.properties?.localidad || 
-                   row.properties?.locality || 
-                   '';
+    const rawLoc = row.localidad ||
+        row.locality ||
+        row._meta?.localidad ||
+        row._meta?.locality ||
+        row.properties?.localidad ||
+        row.properties?.locality ||
+        '';
 
     if (!rawLoc || typeof rawLoc !== 'string') return '';
 
     // 2. Sanitización (Trim + Lowercase + Capitalize first letter)
     // Esto agrupa "BADAJOZ", "badajoz" y " Badajoz" en "Badajoz" respetando tildes ("Mérida")
     const cleanStr = rawLoc.trim().toLowerCase();
-    
+
     // Capitalizamos cada palabra para casos como "Don Benito"
     return cleanStr.replace(/(^\w|\s\w|á|é|í|ó|ú|ñ)/g, (match) => match.toUpperCase());
 };
+
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
 
 export function DataAnalysis() {
     const navigate = useNavigate();
-    
+
     // ESTADOS DE DATOS
     const [allData, setAllData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
@@ -63,7 +64,7 @@ export function DataAnalysis() {
     // 2. FETCHING: Carga inicial de datos
     useEffect(() => {
         if (!token) return;
-        
+
         const loadInitialData = async () => {
             setIsLoading(true);
             try {
@@ -71,10 +72,10 @@ export function DataAnalysis() {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const stats = await statsRes.json();
-                
+
                 if (Array.isArray(stats)) {
                     setSummaryData(stats);
-                    
+
                     const dataPromises = stats.map(cat =>
                         fetch(`${API_BASE}/api/datos/${cat.name}`, {
                             headers: { 'Authorization': `Bearer ${token}` }
@@ -82,10 +83,10 @@ export function DataAnalysis() {
                     );
 
                     const results = await Promise.all(dataPromises);
-                    const flattenedData = results.map((data, idx) => 
+                    const flattenedData = results.map((data, idx) =>
                         data.map((item: any) => ({ ...item, _categoria: stats[idx].name }))
                     ).flat();
-                    
+
                     setAllData(flattenedData);
                 }
             } catch (err) {
@@ -99,7 +100,7 @@ export function DataAnalysis() {
     }, [token]);
 
     // 3. LÓGICA DE FILTRADO DINÁMICO (Cross-filtering)
-    
+
     // 1. Extraer localidades únicas normalizadas
     const availableLocalities = useMemo(() => {
         const unique = new Set<string>();
@@ -115,7 +116,7 @@ export function DataAnalysis() {
         const unique = new Set<string>();
         allData.forEach(row => {
             const loc = extractAndNormalizeLocation(row);
-            
+
             // Si no hay filtro de localidad activo, o si la localidad coincide
             if (!locationFilter || loc === locationFilter) {
                 // Buscamos la categoría en la raíz o en el _meta
@@ -131,19 +132,19 @@ export function DataAnalysis() {
         return allData.filter(row => {
             const loc = extractAndNormalizeLocation(row);
             const cat = row._categoria || row._meta?.categoria;
-            
+
             const matchesLoc = !locationFilter || loc === locationFilter;
             const matchesCat = !tableFilter || cat === tableFilter;
-            
+
             return matchesLoc && matchesCat;
         });
     }, [allData, locationFilter, tableFilter]);
-    // Datos finales filtrados para la Tabla y Estadísticas
-   
+    // Datos finales filtrados para la Tabla 
+
     // Cálculo de métricas para el Dashboard
     const dashboardStats = useMemo(() => {
         if (filteredRows.length === 0) return null;
-        
+
         let complete = 0, enRevision = 0, incomplete = 0;
         filteredRows.forEach(row => {
             if (row.auditoria_estado === 'Completado') complete++;
@@ -159,7 +160,7 @@ export function DataAnalysis() {
         setIsExporting(true);
         // Simulación de delay para feedback visual del botón
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         try {
             const worksheet = XLSX.utils.json_to_sheet(filteredRows);
             const workbook = XLSX.utils.book_new();
@@ -180,10 +181,10 @@ export function DataAnalysis() {
             <Header userEmail={userEmail} onLogout={handleLogout} />
 
             <div className="flex-1 flex overflow-hidden">
-                <Sidebar 
-                    isDark={isDark} 
-                    setIsDark={setIsDark} 
-                    currentView={currentView} 
+                <Sidebar
+                    isDark={isDark}
+                    setIsDark={setIsDark}
+                    currentView={currentView}
                     setCurrentView={setCurrentView}
                     locationFilter={locationFilter}
                     setLocationFilter={setLocationFilter}
@@ -214,9 +215,9 @@ export function DataAnalysis() {
                                 </div>
                             </div>
 
-                            <DataTable 
-                                rows={filteredRows} 
-                                onSort={() => {}} 
+                            <DataTable
+                                rows={filteredRows}
+                                onSort={() => { }}
                                 tableFilter={tableFilter}
                                 isDark={isDark}
                                 onRowClick={(row) => setSelectedRow(row)}
@@ -227,11 +228,43 @@ export function DataAnalysis() {
             </div>
 
             {/* Modal de Detalle con fondo transparente y desenfoque */}
-            <DetailModal 
-                isOpen={!!selectedRow} 
-                data={selectedRow} 
-                onClose={() => setSelectedRow(null)} 
+            <DetailModal
+                isOpen={!!selectedRow}
+                data={selectedRow}
+                onClose={() => setSelectedRow(null)}
             />
         </div>
     );
+
+    const handleDownloadRevisionExcel = async (tabla: string, id: string, nombre: string) => {
+        setIsExporting(true);
+        try {
+            const response = await fetch(`${API_BASE}/api/auditoria/excel/${tabla}/${id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error("Error al generar el Excel profesional");
+
+            // Convertimos la respuesta en un archivo (Blob)
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Creamos un enlace temporal para forzar la descarga
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Revision_${nombre.replace(/\s+/g, '_')}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiamos
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("Error descargando Excel:", err);
+            alert("No se pudo generar el Excel de revisión.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 }

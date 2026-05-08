@@ -76,8 +76,7 @@ export function Login() {
 
 */
     return (
-        // Fíjate que class se ha convertido en className. 
-        // Es el mismo diseño exacto que tenías en tu index.html
+       
         <div className="relative flex min-h-screen items-center justify-center lg:justify-end overflow-hidden bg-[#0d1117] p-4 lg:pr-20 xl:pr-32">
             {/* Fondo e imagen... */}
             <div className="relative z-10 w-full sm:max-w-[420px] p-8 sm:p-10 bg-[#1C232D] rounded-[32px] shadow-2xl border border-white/5">
