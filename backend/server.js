@@ -5,18 +5,14 @@ const cors = require('cors');
 const path = require('path');
 const ExcelJS = require('exceljs');
 
-// ==========================================
-// 🚀 IMPORTS PARA PRODUCCIÓN
-// const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
-// ==========================================
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Sirve el frontend estático (producción)
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Sirve el frontend estático (producción — build de Vite)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // --- CHIVATO PARA DETECTAR ERRORES CON .env ---
 if (!process.env.DB_HOST) {
@@ -41,38 +37,22 @@ const pool = mysql.createPool({
 // ==========================================
 // 2. MIDDLEWARE DE AUTENTICACIÓN
 // ==========================================
-
-// ---> ✅ PRODUCCIÓN: token JWT real <---
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = req.headers['authorization']?.split(' ')[1];
     if (!token) return res.status(401).json({ message: "Acceso denegado." });
 
-    // Token simple firmado con JWT_SECRET (definir en Render > Environment Variables)
-    // Para activar JWT completo descomenta las líneas de jwt.verify y el import de arriba
-    // jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    //     if (err) return res.status(403).json({ message: "Sesión expirada." });
-    //     req.user = user;
-    //     next();
-    // });
-/*
-// ==========================================
-// 🟢 MODO PROD — descomenta este bloque y
-//    comenta el de arriba para desarrollo
-// ==========================================
-    // Mientras no uses JWT real, aceptamos el token-falso del login mock
-
-    req.user = { email: token === 'token-falso' ? 'admin@timestamp.es' : 'consultor@timestamp.es' };
-    next();
-//};
-*/
-// ==========================================
-// 🛑 MODO LOCAL — descomenta este bloque y
-//    comenta el de arriba para desarrollo
-// ==========================================
+    if (process.env.JWT_SECRET) {
+        jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+            if (err) return res.status(403).json({ message: "Sesión expirada." });
+            req.user = user;
+            next();
+        });
+    } else {
+        // Sin JWT_SECRET configurado: acepta cualquier token (sólo para desarrollo)
         req.user = { email: 'admin@local.com' };
         next();
-    };
+    }
+};
 
 
 // ==========================================
@@ -105,6 +85,25 @@ const CATEGORY_TRANSLATIONS = {
     "video_media": "Medio de Video", "virtual_visit": "Visita Virtual",
     "wifi_point": "Punto WiFi", "winery": "Bodega"
 };
+
+// Endpoint para obtener la lista de localidades únicas de todas las tablas (para el filtro en frontend)
+
+app.get('/api/localidades', async (req, res) => {
+    try {
+        const results = await Promise.all(
+            Object.keys(CATEGORY_TRANSLATIONS).map(t =>
+                pool.query(`SELECT DISTINCT localidad FROM \`${t}\``)
+            )
+        );
+        const localidades = [...new Set(
+            results.flatMap(([rows]) => rows.map(r => r.localidad).filter(Boolean))
+        )].sort();
+        res.json(localidades);
+    } catch (error) {
+        console.error('Error en /api/localidades:', error);
+        res.status(500).json({ error: 'Error al obtener localidades' });
+    }
+});
 
 // ==========================================
 // CAMPOS EXCLUIDOS DEL ANÁLISIS
@@ -189,20 +188,23 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
     const C = {
         NAVY:     '0F172A',
         DARK:     '1E293B',
-        BLUE:     '2563EB',
-        BLUE_MD:  'DBEAFE',
-        BLUE_LT:  'EFF6FF',
+        RED:      'ED2125',   // brand accent
+        RED_LT:   'FEE2E2',   // fondo rojo suave (campo vacío)
+        RED_MD:   'FECACA',   // separador de categoría
+        RED_DIM:  'FFF5F5',   // separador fila vacía
         CLOUD:    'F8FAFC',
         GRAY_BD:  'E2E8F0',
         GRAY_TXT: '64748B',
         GRAY_FLD: 'F1F5F9',
         WHITE:    'FFFFFF',
         SLATE:    '334155',
+        GRN:      '059669',   // completado OK
+        GRN_LT:   'D1FAE5',
     };
 
     const solidFill = (hex) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: hex } });
-    const thin  = (color = C.GRAY_BD) => ({ style: 'thin',   color: { argb: color } });
-    const med   = (color = C.BLUE)    => ({ style: 'medium', color: { argb: color } });
+    const thin = (color = C.GRAY_BD) => ({ style: 'thin', color: { argb: color } });
+    const med = (color = C.RED) => ({ style: 'medium', color: { argb: color } });
     const allBorder = (color = C.GRAY_BD) => ({ left: thin(color), right: thin(color), top: thin(color), bottom: thin(color) });
 
     const wb = new ExcelJS.Workbook();
@@ -247,29 +249,22 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
     title.alignment = { vertical: 'middle' };
 
     const sub = ws.getCell('B3');
-    sub.value = `Formulario de actualización · ${categoriaLabel}`;
+    sub.value = `Formulario de actualización  ·  ${categoriaLabel}`;
     sub.font = { name: 'Segoe UI', size: 9, color: { argb: '94A3B8' } };
     sub.alignment = { vertical: 'middle' };
 
-    const sub2 = ws.getCell('B4');
-    sub2.value = `ID Registro: ${id}`;
-    sub2.font = { name: 'Segoe UI', size: 8, color: { argb: '64748B' } };
-    sub2.alignment = { vertical: 'middle' };
-/*d
-    // Botones simulados en columna D
-    const btn1 = ws.getCell('D2');
-    btn1.value = '▶  GUARDAR CAMBIOS';
-    btn1.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: C.WHITE } };
-    btn1.fill = solidFill(C.BLUE);
-    btn1.alignment = { horizontal: 'center', vertical: 'middle' };
-    btn1.border = allBorder('1D4ED8');
+    // Completitud del registro
+    const camposTotal = camposEditables.length;
+    const camposRellenos = camposEditables.filter(k => {
+        const v = registro[k];
+        return v !== null && v !== undefined && v.toString().trim() !== '';
+    }).length;
+    const pctRegistro = camposTotal === 0 ? 100 : Math.round((camposRellenos / camposTotal) * 100);
 
-    const btn2 = ws.getCell('D3');
-    btn2.value = '✕  LIMPIAR';
-    btn2.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: '94A3B8' } };
-    btn2.fill = solidFill(C.NAVY);
-    btn2.alignment = { horizontal: 'center', vertical: 'middle' };
-*/
+    const sub2 = ws.getCell('B4');
+    sub2.value = `ID: ${id}  ·  ${camposRellenos}/${camposTotal} campos completados (${pctRegistro}%)`;
+    sub2.font = { name: 'Segoe UI', size: 8, color: { argb: pctRegistro === 100 ? C.GRN : C.RED } };
+    sub2.alignment = { vertical: 'middle' };
     const btn3 = ws.getCell('D4');
     btn3.value = `Generado: ${new Date().toLocaleDateString('es-ES')}  ·  ${usuarioEmail}`;
     btn3.font = { name: 'Segoe UI', size: 8, italic: true, color: { argb: '64748B' } };
@@ -279,9 +274,9 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
     // ── Cabeceras de columna (fila 6) ──
     ws.getRow(6).height = 26;
     [
-        { col: 2, text: 'CAMPO FÍSICO',            bg: C.DARK },
+        { col: 2, text: 'CAMPO', bg: C.DARK },
         { col: 3, text: 'VALOR ACTUAL EN SISTEMA', bg: C.DARK },
-        { col: 4, text: 'NUEVO VALOR  ✎',          bg: C.BLUE },
+        { col: 4, text: '✏  CORREGIR / COMPLETAR', bg: C.RED },
     ].forEach(({ col, text, bg }) => {
         const cell = ws.getCell(6, col);
         cell.value = text;
@@ -303,13 +298,13 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
 
         // Separador de categoría
         ws.getRow(currentRow).height = 17;
-        for (let c = 1; c <= 5; c++) ws.getCell(currentRow, c).fill = solidFill(C.BLUE_MD);
+        for (let c = 1; c <= 5; c++) ws.getCell(currentRow, c).fill = solidFill(C.RED_MD);
         const catCell = ws.getCell(currentRow, 2);
-        catCell.value = `  ${category}`;
-        catCell.font = { name: 'Segoe UI', size: 8, bold: true, color: { argb: C.BLUE } };
+        catCell.value = `  ⬦  ${category.toUpperCase()}`;
+        catCell.font = { name: 'Segoe UI', size: 8, bold: true, color: { argb: C.RED } };
         catCell.alignment = { vertical: 'middle' };
         for (let c = 2; c <= 4; c++) {
-            ws.getCell(currentRow, c).border = { top: thin('BFDBFE'), bottom: thin('BFDBFE') };
+            ws.getCell(currentRow, c).border = { top: thin(C.RED_LT), bottom: thin(C.RED_LT) };
         }
         currentRow++;
 
@@ -324,29 +319,31 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
             // A - margen
             ws.getCell(currentRow, 1).fill = solidFill(C.CLOUD);
 
-            // B - Campo físico
+            // B - Campo físico (fondo rojo si vacío)
             const b = ws.getCell(currentRow, 2);
-            b.value = campo.toUpperCase();
-            b.font = { name: 'Courier New', size: 9, bold: true, color: { argb: C.SLATE } };
-            b.fill = solidFill(C.GRAY_FLD);
+            b.value = campo.replace(/_/g, ' ').toUpperCase();
+            b.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: isEmpty ? C.RED : C.SLATE } };
+            b.fill = solidFill(isEmpty ? C.RED_DIM : C.GRAY_FLD);
             b.alignment = { vertical: 'middle', indent: 1 };
-            b.border = allBorder();
+            b.border = isEmpty
+                ? { ...allBorder(C.RED_LT), left: med(C.RED) }
+                : allBorder();
 
-            // C - Valor actual (sólo lectura visual)
+            // C - Valor actual
             const c = ws.getCell(currentRow, 3);
-            c.value = valorTexto;
-            c.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: isEmpty ? 'BBBBBB' : '1E293B' } };
-            c.fill = solidFill(rowBg);
+            c.value = isEmpty ? '— sin valor —' : valorTexto;
+            c.font = { name: 'Segoe UI', size: 9, italic: isEmpty, color: { argb: isEmpty ? 'CCCCCC' : '1E293B' } };
+            c.fill = solidFill(isEmpty ? C.RED_DIM : rowBg);
             c.alignment = { vertical: 'middle', indent: 1, wrapText: true };
-            c.border = allBorder();
+            c.border = isEmpty ? allBorder(C.RED_LT) : allBorder();
 
-            // D - Nuevo valor (editable, borde azul izquierdo)
+            // D - Nuevo valor (editable, borde rojo izquierdo)
             const d = ws.getCell(currentRow, 4);
             d.value = '';
             d.font = { name: 'Segoe UI', size: 10, color: { argb: '1E293B' } };
-            d.fill = solidFill(C.WHITE);
+            d.fill = solidFill(isEmpty ? 'FFF8F8' : C.WHITE);
             d.alignment = { vertical: 'middle', indent: 1 };
-            d.border = { left: med(), right: thin(), top: thin(), bottom: thin() };
+            d.border = { left: med(C.RED), right: thin(), top: thin(), bottom: thin() };
 
             // E - margen
             ws.getCell(currentRow, 5).fill = solidFill(C.CLOUD);
@@ -380,9 +377,9 @@ async function generarExcel(registro, tabla, id, camposEditables, usuarioEmail =
                 type: 'expression',
                 formulae: [`D${dataRows[0]}<>""`],
                 style: {
-                    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } },
-                    font: { bold: true, color: { argb: C.BLUE } },
-                    border: { left: { style: 'medium', color: { argb: C.BLUE } } }
+                    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0' } },
+                    font: { bold: true, color: { argb: C.RED } },
+                    border: { left: { style: 'medium', color: { argb: C.RED } } }
                 }
             }]
         });
@@ -427,21 +424,13 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    // ---> Login mock (válido mientras no haya DB de usuarios) <---
-    if (email === 'admin' && password === 'admin') {
-        return res.json({ token: "token-falso", email: "admin@timestamp.es", message: "Bienvenido" });
+    if (email !== 'admin' || password !== 'admin') {
+        return res.status(400).json({ message: "Credenciales incorrectas. Usa admin / admin" });
     }
-    return res.status(400).json({ message: "Credenciales incorrectas. Usa admin / admin" });
-
-    /*
-    // ---> ✅ Login real con bcrypt + JWT <---
-    // const [rows] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
-    // if (!rows.length) return res.status(400).json({ message: "Usuario no encontrado." });
-    // const valid = await bcrypt.compare(password, rows[0].password_hash);
-    // if (!valid) return res.status(400).json({ message: "Contraseña incorrecta." });
-    // const token = jwt.sign({ email: rows[0].email }, process.env.JWT_SECRET, { expiresIn: '8h' });
-    // return res.json({ token, email: rows[0].email });
-    */
+    const token = process.env.JWT_SECRET
+        ? jwt.sign({ email: 'admin@timestamp.es' }, process.env.JWT_SECRET, { expiresIn: '8h' })
+        : 'token-falso';
+    return res.json({ token, email: 'admin@timestamp.es', message: "Bienvenido" });
 });
 
 // ==========================================
@@ -571,17 +560,8 @@ app.get('/api/auditoria/excel/:tabla/:id', authenticateToken, async (req, res) =
 
         // 4. Generar Excel con diseño profesional + categorías dinámicas
         const workbook = await generarExcel(registro, tabla, id, camposEditables, req.user.email);
-
-        // 5. Nombre del archivo limpio
-        const nombreBase = (registro.nombre || registro.name || registro.titulo || `Registro_${id}`)
-            .replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑ ]/g, '')
-            .trim()
-            .replace(/ /g, '_');
-        const nombreArchivo = `Plantilla_${nombreBase}.xlsx`;
-
-        // 6. Enviar como descarga
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="Auditoria_${id}.xlsx"`);
         await workbook.xlsx.write(res);
         res.end();
 
@@ -596,7 +576,7 @@ app.get('/api/auditoria/excel/:tabla/:id', authenticateToken, async (req, res) =
 // ==========================================
 app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+        res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
     } else {
         next();
     }

@@ -1,111 +1,110 @@
-// src/app/components/ui/Sidebar.tsx
+import { CATEGORY_TRANSLATIONS, type View } from '../../lib/constants';
 
-import React from 'react';
-
-// 2. Definimos qué variables y funciones externas necesita este componente para funcionar.
-// Esto nos garantiza que TypeScript nos avise si olvidamos pasarle algún dato.
 interface SidebarProps {
     isDark: boolean;
     setIsDark: (val: boolean) => void;
-    currentView: string;
-    setCurrentView: (view: string) => void;
+    currentView: View;
+    setCurrentView: (view: View) => void;
     locationFilter: string;
     setLocationFilter: (val: string) => void;
     tableFilter: string;
     setTableFilter: (val: string) => void;
     availableLocalities: string[];
     availableCategories: string[];
-    isExporting: boolean;
-    onExport: () => void;
+    isLoadingData: boolean;
 }
 
-// 3. Creamos el componente recibiendo esas propiedades
-export function Sidebar(props: SidebarProps) {
-
-    const {
-        isDark, setIsDark, currentView, setCurrentView,
-        locationFilter, setLocationFilter,
-        tableFilter, setTableFilter,
-        availableLocalities, availableCategories,
-        isExporting, onExport
-    } = props;
-
+export function Sidebar({
+    isDark, setIsDark, currentView, setCurrentView,
+    locationFilter, setLocationFilter,
+    tableFilter, setTableFilter,
+    availableLocalities, availableCategories,
+    isLoadingData,
+}: SidebarProps) {
     return (
-        <aside className="w-64 bg-white dark:bg-gray-800 border-r flex flex-col z-20 shadow-sm">
+        <aside className="w-64 bg-white dark:bg-gray-800 border-r border-warm-100 dark:border-gray-700 flex flex-col z-20 shrink-0 shadow-sm">
             <div className="p-4 space-y-4">
-                {/* Navegación principal ... (tus botones Home y Gestión de Datos) ... */}
 
-                {/* NUEVO: Sección de Filtros Dinámicos */}
-                <div className="mt-8 space-y-4 border-t border-warm-100 dark:border-gray-700 pt-4">
-
-                    {/* Selector de Localidad */}
-                    <div>
-                        <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">
-                            Filtro de Localidad
-                        </label>
-                        <select
-                            value={locationFilter}
-                            // Al cambiar, actualizamos el estado en DataAnalysis.tsx
-                            onChange={(e) => {
-                                setLocationFilter(e.target.value);
-                                // Limpiamos la categoría si cambiamos de localidad, para evitar inconsistencias
-                                setTableFilter('');
-                            }}
-                            className="w-full text-xs bg-gray-50 dark:bg-gray-900 border rounded-lg p-2 text-gray-700 dark:text-gray-300"
-                        >
-                            <option value="">Todas las localidades</option>
-                            {/* Iteramos sobre el array generado dinámicamente */}
-                            {availableLocalities.map(loc => (
-                                <option key={loc} value={loc}>{loc}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Selector de Categoría (dependiente de la localidad) */}
-                    <div>
-                        <label className="text-[10px] uppercase text-gray-500 font-bold mb-1 block">
-                            Categoría (Tabla)
-                        </label>
-                        <select
-                            value={tableFilter}
-                            onChange={(e) => setTableFilter(e.target.value)}
-                            // Deshabilitamos si no hay categorías disponibles
-                            disabled={availableCategories.length === 0}
-                            className="w-full text-xs bg-gray-50 dark:bg-gray-900 border rounded-lg p-2 text-gray-700 dark:text-gray-300 disabled:opacity-50"
-                        >
-                            <option value="">Todas las categorías</option>
-                            {availableCategories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Filtro por Localidad */}
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center justify-between ml-1">
+                        <span className="flex items-center">
+                            <i className="ph-fill ph-map-pin mr-2 text-primary"></i>
+                            Filtro por localidad
+                        </span>
+                        {isLoadingData && <i className="ph ph-spinner animate-spin text-primary" title="Cargando datos..."></i>}
+                    </label>
+                    <select
+                        value={locationFilter}
+                        onChange={e => { setLocationFilter(e.target.value); setTableFilter(''); }}
+                        className="w-full py-2 px-2 bg-warm-50 dark:bg-gray-900 border border-warm-200 dark:border-gray-700 rounded-lg text-[11px] font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer text-gray-700 dark:text-gray-300"
+                    >
+                        <option value="">Todas las localidades</option>
+                        {availableLocalities.map(loc => (
+                            <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                    </select>
                 </div>
+
+                {/* Filtro por Categoría */}
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center ml-1">
+                        <i className="ph-fill ph-funnel mr-2 text-primary"></i>
+                        Filtro por categoría
+                    </label>
+                    <select
+                        value={tableFilter}
+                        onChange={e => { setTableFilter(e.target.value); if (e.target.value) setCurrentView('data'); }}
+                        className="w-full py-2 px-2 bg-warm-50 dark:bg-gray-900 border border-warm-200 dark:border-gray-700 rounded-lg text-[11px] font-bold focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer text-gray-700 dark:text-gray-300"
+                    >
+                        <option value="">Todas las categorías</option>
+                        {availableCategories.map(cat => (
+                            <option key={cat} value={cat}>{CATEGORY_TRANSLATIONS[cat] || cat}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="h-px bg-warm-100 dark:bg-gray-700"></div>
+
+                {/* Navegación */}
+                <nav className="space-y-1">
+                    <button
+                        onClick={() => { setCurrentView('dashboard'); setTableFilter(''); setLocationFilter(''); }}
+                        className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${
+                            currentView === 'dashboard'
+                                ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-warm-100 dark:hover:bg-gray-700/50'
+                        }`}
+                    >
+                        <i className="ph ph-house-line text-lg mr-3"></i> Home
+                    </button>
+                    <button
+                        onClick={() => setCurrentView('data')}
+                        className={`w-full flex items-center px-3 py-2 text-xs font-bold rounded-lg transition-all ${
+                            currentView === 'data'
+                                ? 'text-primary bg-primary-50 dark:bg-primary-900/20 shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-warm-100 dark:hover:bg-gray-700/50'
+                        }`}
+                    >
+                        <i className="ph ph-database text-lg mr-3"></i> Gestión de Datos
+                    </button>
+                </nav>
             </div>
 
-            {/* Zona inferior: Botón Excel y Tema */}
-            <div className="mt-auto p-4 border-t border-warm-100 dark:border-gray-700 space-y-4">
-
-                {/* RESTAURACIÓN UX: Botón de Exportación con estado Loading */}
-                <button
-                    onClick={onExport}
-                    disabled={isExporting} // Bloquea múltiples clics
-                    className="w-full flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white p-2 rounded-lg text-sm font-bold transition-colors"
-                >
-                    {/* Cambiamos texto e icono según el estado */}
-                    {isExporting ? (
-                        <>
-                            <i className="ph ph-spinner animate-spin text-lg"></i>
-                            <span>Generando...</span>
-                        </>
-                    ) : (
-                        <>
-                            <i className="ph ph-file-xls text-lg"></i>
-                            <span>Descargar Excel</span>
-                        </>
-                    )}
-                </button>
-
-                {/* Toggle Tema (tu código original) ... */}
+            {/* Zona inferior: Toggle Tema */}
+            <div className="mt-auto p-4 border-t border-warm-100 dark:border-gray-700">
+                <div className="flex items-center justify-between px-2">
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Tema</span>
+                    <button
+                        onClick={() => setIsDark(!isDark)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-primary transition-all"
+                    >
+                        {isDark
+                            ? <i className="ph-fill ph-moon text-lg"></i>
+                            : <i className="ph ph-sun text-lg"></i>
+                        }
+                    </button>
+                </div>
             </div>
         </aside>
     );

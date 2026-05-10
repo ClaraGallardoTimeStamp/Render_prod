@@ -1,27 +1,102 @@
-
-
-/* Importamos la fuente del html de origen */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
-body { 
-  font-family: 'Inter', sans-serif; 
+body {
+  font-family: 'Inter', sans-serif;
 }
 
-/* Personalización de la barra de desplazamiento*/
+/* Scrollbar global */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
 
-/* Animaciones personalizadas */
+/* Scrollbar compacto para paneles internos */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Animaciones */
 .fade-in { animation: fadeIn 0.4s ease-out; }
 .slide-up { animation: slideUp 0.3s ease-out; }
 
-@keyframes fadeIn { 
-  from { opacity: 0; transform: translateY(5px); } 
-  to { opacity: 1; transform: translateY(0); } 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes slideUp { 
-  from { transform: translateY(20px); opacity: 0; } 
-  to { transform: translateY(0); } 
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
+
+/* Toast progress bar */
+@keyframes toastProgress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+.animate-toast-progress { animation: toastProgress 5s linear forwards; }
+
+/* Pills de categoría */
+.pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Redimensionador de columna en tabla */
+.resizer {
+  position: absolute;
+  right: 0; top: 0;
+  height: 100%; width: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  transition: background 0.2s;
+}
+.dark .resizer { background: rgba(255, 255, 255, 0.05); }
+.resizer:hover,
+.resizer.is-resizing { background: #EB1C23; width: 4px; }
+
+/* ── Excel download button animations ──────────────────────────────────────── */
+@keyframes xb-blob-enter {
+  0%   { border-radius: 50%; transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  45%  { border-radius: 58% 42% 48% 52% / 55% 50% 50% 45%; transform: scale(1.18) rotate(8deg); opacity: 1; }
+  65%  { border-radius: 42% 58% 64% 36% / 55% 38% 62% 45%; transform: scale(0.94) rotate(-6deg); }
+  82%  { border-radius: 60% 40% 38% 62% / 45% 60% 40% 55%; transform: scale(1.06) rotate(4deg); }
+  100% { border-radius: 24%; transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes xb-done-enter {
+  from { border-radius: 24%; transform: scale(0.7); opacity: 0; }
+  to   { border-radius: 50%; transform: scale(1); opacity: 1; }
+}
+@keyframes xb-check-draw {
+  from { stroke-dashoffset: 20; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+@keyframes xb-burst {
+  from { transform: scale(1); opacity: 0.55; }
+  to   { transform: scale(2); opacity: 0; }
+}
+@keyframes xb-line-draw {
+  from { stroke-dashoffset: 16; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 0.92; }
+}
+@keyframes xb-row-scan {
+  0%        { transform: translateY(0);    opacity: 0; }
+  20%       { opacity: 0.85; }
+  75%       { opacity: 0.85; }
+  100%      { transform: translateY(10px); opacity: 0; }
+}
+@keyframes xb-dot {
+  0%, 100% { transform: translateY(0);  opacity: 0.45; }
+  50%       { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes xb-label-in {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.xb-blob-anim     { animation: xb-blob-enter 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
+.xb-grid-settled  { border-radius: 24%; transform: scale(1); opacity: 1; }
+.xb-done-enter    { animation: xb-done-enter 0.4s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
+.xb-check-draw    { animation: xb-check-draw 0.42s cubic-bezier(0.65, 0, 0.35, 1) 0.16s forwards; }
+.xb-burst         { animation: xb-burst 0.7s ease-out 0.18s forwards; }
+.xb-line-draw     { animation: xb-line-draw 0.32s ease-out forwards; }
+.xb-row-scan      { animation: xb-row-scan 1.4s ease-in-out infinite; }
+.xb-dot           { animation: xb-dot 0.9s ease-in-out infinite; }
+.xb-label-in      { animation: xb-label-in 0.22s ease forwards; }
