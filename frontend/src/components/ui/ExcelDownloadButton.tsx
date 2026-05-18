@@ -14,9 +14,10 @@ interface ExcelDownloadButtonProps {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
+// Sage gradient — matches the "complete" status color in our design system
 const SHAPE_STYLE = {
-    background: 'linear-gradient(155deg, #6ee7b7 0%, #10b981 45%, #047857 100%)',
-    boxShadow: 'inset 0 -2px 5px rgba(2,44,34,0.35), inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 8px -3px rgba(4,120,87,0.5)',
+    background: 'linear-gradient(155deg, #C8D8B4 0%, #A3B18A 45%, #7C8C6A 100%)',
+    boxShadow: 'inset 0 -2px 5px rgba(20,35,15,0.35), inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 8px -3px rgba(124,140,106,0.4)',
 };
 
 function GridLines() {
@@ -68,7 +69,7 @@ function DoneIcon() {
                 />
             </svg>
             <span className="absolute inset-0 rounded-full xb-burst"
-                style={{ border: '2px solid rgba(16,185,129,0.6)' }} />
+                style={{ border: '2px solid rgba(163,177,138,0.6)' }} />
         </span>
     );
 }
@@ -144,13 +145,13 @@ export function ExcelDownloadButton({
         <button
             onClick={run}
             disabled={isWorking || disabled}
-            className={`relative flex items-center justify-center gap-2 font-black text-white transition-colors shadow-md
+            className={`relative flex items-center justify-center gap-2 font-semibold text-white transition-all shadow-md
                 ${sizeClass}
                 ${disabled
-                    ? 'bg-gray-400 cursor-not-allowed'
+                    ? 'bg-surface-highlight text-ink-tertiary cursor-not-allowed border border-white/[0.05]'
                     : isWorking
-                        ? 'bg-green-700 cursor-progress'
-                        : 'bg-green-600 hover:bg-green-700 active:scale-95'
+                        ? 'bg-[#3A4D35] cursor-progress border border-accent-sage/20'
+                        : 'bg-[#3A4D35] hover:bg-[#445840] active:scale-[0.98] border border-accent-sage/20'
                 }
                 ${className}`}
         >

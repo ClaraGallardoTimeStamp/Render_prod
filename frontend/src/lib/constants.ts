@@ -35,18 +35,19 @@ export const EXCLUDED_FIELDS = [
     'auditoria_estado', 'usuario_auditor'
 ].map(f => f.toLowerCase());
 
-export const getSolidColor = (percent: number, isDark: boolean): string => {
-    if (percent <= 30) return isDark ? '#f87171' : '#dc2626';
-    if (percent >= 100) return isDark ? '#34d399' : '#059669';
-    const hue = ((percent - 30) / 70) * 120;
-    return `hsl(${hue}, ${isDark ? '40%' : '50%'}, ${isDark ? '55%' : '45%'})`;
+// Status color system: violet (incomplete) → gold (partial) → sage (complete)
+export const getSolidColor = (percent: number, _isDark?: boolean): string => {
+    if (percent >= 95) return '#A3B18A';  // sage-light — complete
+    if (percent >= 60) return '#D4AF37';  // gold — partial
+    if (percent >= 30) return '#C084FC';  // purple — low
+    return '#A78BFA';                     // violet — very low
 };
 
-export const getPastelColor = (percent: number, isDark: boolean): string => {
-    if (percent <= 30) return isDark ? 'rgba(248,113,113,0.08)' : 'rgba(220,38,38,0.04)';
-    if (percent >= 100) return isDark ? 'rgba(52,211,153,0.08)' : 'rgba(5,150,105,0.04)';
-    const hue = ((percent - 30) / 70) * 120;
-    return `hsla(${hue},${isDark ? '35%' : '40%'},50%,${isDark ? '0.12' : '0.06'})`;
+export const getPastelColor = (percent: number, _isDark?: boolean): string => {
+    if (percent >= 95) return 'rgba(163, 177, 138, 0.09)';
+    if (percent >= 60) return 'rgba(212, 175,  55, 0.09)';
+    if (percent >= 30) return 'rgba(192, 132, 252, 0.09)';
+    return 'rgba(167, 139, 250, 0.09)';
 };
 
 export const getLocality = (row: any): string =>

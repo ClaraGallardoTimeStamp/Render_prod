@@ -4,32 +4,51 @@ import Chart from 'chart.js/auto';
 import { API_BASE, CATEGORY_TRANSLATIONS, getSolidColor, getPastelColor, getLocality, isEditableKey, type View } from '../lib/constants';
 import { exportAuditTable } from '../lib/exportExcel';
 import { ExcelDownloadButton } from '../components/ui/ExcelDownloadButton';
-
 import { Header } from '../components/ui/Header';
 import { Sidebar } from '../components/ui/Sidebar';
 import { DataTable } from '../components/ui/DataTable';
 import { DetailModal } from '../components/ui/DetailModal';
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
 interface Toast { type: 'success' | 'error'; message: string; }
 interface SortConfig { key: string | null; direction: 'asc' | 'desc'; }
 
-// ─── Componente principal ────────────────────────────────────────────────────
+// ── Stat card ─────────────────────────────────────────────────────────────────
+
+interface StatCardProps {
+    label: string;
+    value: number;
+    icon: string;
+    color: string;
+    borderColor: string;
+}
+
+function StatCard({ label, value, icon, color, borderColor }: StatCardProps) {
+    return (
+        <div className="bg-surface-overlay border border-white/[0.05] rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden"
+            style={{ borderTopColor: borderColor, borderTopWidth: 1 }}
+        >
+            <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-ink-tertiary">{label}</span>
+                <i className={`${icon} text-lg opacity-50`} style={{ color }}></i>
+            </div>
+            <span className="text-3xl font-bold text-ink-primary tabular-nums" style={{ color }}>
+                {value.toLocaleString()}
+            </span>
+        </div>
+    );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export function DataAnalysis() {
     const navigate = useNavigate();
-
-    // Estado de autenticación
     const token = localStorage.getItem('token');
     const userEmail = localStorage.getItem('userEmail') || 'Consultor';
 
-    // Estado de datos
     const [allData, setAllData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(false);
 
-    // Estado de UI
     const [isDark, setIsDark] = useState(true);
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [locationFilter, setLocationFilter] = useState('');
@@ -40,23 +59,14 @@ export function DataAnalysis() {
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: 'asc' });
     const [toast, setToast] = useState<Toast | null>(null);
 
-    // Refs para el donut chart
     const donutChartRef = useRef<HTMLCanvasElement>(null);
     const donutChartInstance = useRef<Chart | null>(null);
     const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // ── Auth guard ───────────────────────────────────────────────────────────
     useEffect(() => { if (!token) navigate('/login'); }, [token, navigate]);
-
-    // ── Toast timer cleanup on unmount ───────────────────────────────────────
     useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
+    useEffect(() => { document.documentElement.classList.toggle('dark', isDark); }, [isDark]);
 
-    // ── Dark mode ────────────────────────────────────────────────────────────
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDark);
-    }, [isDark]);
-
-    // ── Carga de estadísticas ─────────────────────────────────────────────────
     useEffect(() => {
         if (!token) return;
         fetch(`${API_BASE}/api/estadisticas`, { headers: { Authorization: `Bearer ${token}` } })
@@ -65,7 +75,6 @@ export function DataAnalysis() {
             .catch(err => console.error('Error estadísticas:', err));
     }, [token]);
 
-    // ── Carga de todos los datos ──────────────────────────────────────────────
     useEffect(() => {
         if (summaryData.length === 0 || !token) return;
         setIsLoadingData(true);
@@ -76,18 +85,13 @@ export function DataAnalysis() {
                     .then((data: any[]) => data.map(item => ({ ...item, _categoria: cat.name })))
                     .catch(() => [])
             )
-        ).then(results => {
-            setAllData(results.flat());
-            setIsLoadingData(false);
-        });
+        ).then(results => { setAllData(results.flat()); setIsLoadingData(false); });
     }, [summaryData, token]);
 
-    // ── Localidades disponibles ───────────────────────────────────────────────
     const availableLocalities = useMemo(() =>
         [...new Set(allData.map(getLocality).filter((l): l is string => !!l?.trim()))].sort()
     , [allData]);
 
-    // ── Categorías disponibles (condicionadas a localidad) ────────────────────
     const availableCategories = useMemo(() => {
         if (!locationFilter) return summaryData.map(c => c.name).sort();
         const cats = new Set<string>();
@@ -98,26 +102,19 @@ export function DataAnalysis() {
         return Array.from(cats).sort();
     }, [allData, summaryData, locationFilter]);
 
-    // ── Datos filtrados por localidad + categoría ─────────────────────────────
-    const filteredAllData = useMemo(() => {
-        return allData.filter(row => {
-            const loc = getLocality(row);
-            const matchLoc = locationFilter ? loc === locationFilter : true;
-            const matchCat = tableFilter ? row._categoria === tableFilter : true;
-            return matchLoc && matchCat;
-        });
-    }, [allData, locationFilter, tableFilter]);
+    const filteredAllData = useMemo(() => allData.filter(row => {
+        const loc = getLocality(row);
+        const matchLoc = locationFilter ? loc === locationFilter : true;
+        const matchCat = tableFilter ? row._categoria === tableFilter : true;
+        return matchLoc && matchCat;
+    }), [allData, locationFilter, tableFilter]);
 
-    // ── Estadísticas del dashboard ────────────────────────────────────────────
     const dashboardStats = useMemo(() => {
         if (filteredAllData.length === 0) return null;
         let complete = 0, enRevision = 0, incomplete = 0;
         filteredAllData.forEach(row => {
             const keys = Object.keys(row).filter(isEditableKey);
-            const hasEmpty = keys.some(k => {
-                const v = row[k];
-                return v === null || v === undefined || String(v).trim() === '';
-            });
+            const hasEmpty = keys.some(k => { const v = row[k]; return v === null || v === undefined || String(v).trim() === ''; });
             if (!hasEmpty) complete++;
             else if (row.auditoria_estado === 'En revisión') enRevision++;
             else incomplete++;
@@ -126,30 +123,23 @@ export function DataAnalysis() {
         return { total, complete, enRevision, incomplete, percentComplete: total === 0 ? 0 : Math.round((complete / total) * 100) };
     }, [filteredAllData]);
 
-    // ── Filas procesadas con _meta ────────────────────────────────────────────
-    const processedRows = useMemo(() => {
-        return filteredAllData.map(row => {
-            const editableKeys = Object.keys(row).filter(isEditableKey);
-            let filled = 0, missing = 0;
-            editableKeys.forEach(k => {
-                const v = row[k];
-                if (v !== null && v !== undefined && String(v).trim() !== '') filled++;
-                else missing++;
-            });
-            const total = editableKeys.length;
-            const percent = total === 0 ? 100 : parseFloat(((filled / total) * 100).toFixed(2));
-            const nombreValor = row.nombre || row.name || row.titulo || row.title || `Reg #${row.id ?? '-'}`;
-            let fechaMod = '---';
-            if (row.fecha_actualizacion) fechaMod = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES');
-            else if (row.fecha_creacion) fechaMod = new Date(row.fecha_creacion).toLocaleDateString('es-ES');
-            return {
-                ...row,
-                _meta: { nombreValor, numCampos: total, missingFieldsCount: missing, percent, editableKeys, fechaMod, isComplete: missing === 0 }
-            };
+    const processedRows = useMemo(() => filteredAllData.map(row => {
+        const editableKeys = Object.keys(row).filter(isEditableKey);
+        let filled = 0, missing = 0;
+        editableKeys.forEach(k => {
+            const v = row[k];
+            if (v !== null && v !== undefined && String(v).trim() !== '') filled++;
+            else missing++;
         });
-    }, [filteredAllData]);
+        const total = editableKeys.length;
+        const percent = total === 0 ? 100 : parseFloat(((filled / total) * 100).toFixed(2));
+        const nombreValor = row.nombre || row.name || row.titulo || row.title || `Reg #${row.id ?? '-'}`;
+        let fechaMod = '—';
+        if (row.fecha_actualizacion) fechaMod = new Date(row.fecha_actualizacion).toLocaleDateString('es-ES');
+        else if (row.fecha_creacion) fechaMod = new Date(row.fecha_creacion).toLocaleDateString('es-ES');
+        return { ...row, _meta: { nombreValor, numCampos: total, missingFieldsCount: missing, percent, editableKeys, fechaMod, isComplete: missing === 0 } };
+    }), [filteredAllData]);
 
-    // ── Filas filtradas + ordenadas (vista de datos) ──────────────────────────
     const filteredAndSortedRows = useMemo(() => {
         let result = processedRows.filter(row => {
             const matchSearch = row._meta.nombreValor.toLowerCase().includes(tableSearch.toLowerCase());
@@ -171,14 +161,10 @@ export function DataAnalysis() {
         return result;
     }, [processedRows, tableSearch, showOnlyIncomplete, sortConfig]);
 
-    // ── Resumen de categorías para pills del dashboard ────────────────────────
     const sortedSummary = useMemo(() => {
         if (!locationFilter) {
             return [...summaryData]
-                .map(cat => ({
-                    ...cat,
-                    percent: cat.total === 0 ? 0 : parseFloat(((cat.complete / cat.total) * 100).toFixed(2))
-                }))
+                .map(cat => ({ ...cat, percent: cat.total === 0 ? 0 : parseFloat(((cat.complete / cat.total) * 100).toFixed(2)) }))
                 .sort((a, b) => b.percent - a.percent);
         }
         const catStats: Record<string, { name: string; total: number; complete: number }> = {};
@@ -195,7 +181,7 @@ export function DataAnalysis() {
             .sort((a, b) => b.percent - a.percent);
     }, [summaryData, filteredAllData, locationFilter]);
 
-    // ── Donut chart (después de dashboardStats) ──────────────────────────────
+    // Donut chart — sage / gold / violet
     useEffect(() => {
         if (currentView !== 'dashboard' || !dashboardStats || !donutChartRef.current) return;
         if (donutChartInstance.current) donutChartInstance.current.destroy();
@@ -205,21 +191,15 @@ export function DataAnalysis() {
                 labels: ['Completos', 'En Revisión', 'Incompletos'],
                 datasets: [{
                     data: [dashboardStats.complete, dashboardStats.enRevision, dashboardStats.incomplete],
-                    backgroundColor: [
-                        isDark ? '#34d399' : '#059669',
-                        isDark ? '#fbbf24' : '#d97706',
-                        isDark ? '#f87171' : '#dc2626',
-                    ],
+                    backgroundColor: ['#A3B18A', '#D4AF37', '#A78BFA'],
                     borderWidth: 0,
-                    cutout: '80%',
+                    cutout: '82%',
                 } as any]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
         return () => { donutChartInstance.current?.destroy(); };
-    }, [dashboardStats, isDark, currentView]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // ── Handlers ──────────────────────────────────────────────────────────────
+    }, [dashboardStats, currentView]);
 
     const showToast = (type: Toast['type'], message: string) => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -228,16 +208,11 @@ export function DataAnalysis() {
     };
 
     const handleSort = (key: string) => {
-        setSortConfig(prev => ({
-            key,
-            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-        }));
+        setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
     };
 
     const handleLogout = () => { localStorage.clear(); navigate('/login'); };
-
-    const exportTableToExcel = () =>
-        exportAuditTable(filteredAndSortedRows, locationFilter, tableFilter);
+    const exportTableToExcel = () => exportAuditTable(filteredAndSortedRows, locationFilter, tableFilter);
 
     const handleDownloadRevisionExcel = async (tabla: string, id: string, nombre: string): Promise<void> => {
         const response = await fetch(`${API_BASE}/api/auditoria/excel/${tabla}/${id}`, {
@@ -247,14 +222,10 @@ export function DataAnalysis() {
             showToast('error', 'Error al generar el Excel. ¿Está el servidor activo?');
             throw new Error('Server error');
         }
-
         setAllData(prev => prev.map(r =>
-            (String(r.id) === String(id) && r._categoria === tabla)
-                ? { ...r, auditoria_estado: 'En revisión' }
-                : r
+            (String(r.id) === String(id) && r._categoria === tabla) ? { ...r, auditoria_estado: 'En revisión' } : r
         ));
         setSelectedRow((prev: any) => prev ? { ...prev, auditoria_estado: 'En revisión' } : null);
-
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -264,32 +235,31 @@ export function DataAnalysis() {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-
         showToast('success', 'Registro marcado "En revisión" y Excel descargado.');
     };
 
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className={`flex flex-col h-screen ${isDark ? 'dark bg-gray-900' : 'bg-warm-50'}`}>
+        <div className={`flex flex-col h-screen ${isDark ? 'dark bg-surface-base' : 'bg-slate-50'}`}>
 
             {/* Toast */}
             {toast && (
-                <div className="fixed top-6 left-6 z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl overflow-hidden flex flex-col min-w-[300px] border border-warm-100 dark:border-gray-700 slide-up">
-                    <div className="p-4 flex items-center gap-3">
+                <div className="fixed top-5 left-5 z-[100] bg-surface-elevated border border-white/[0.08] shadow-elevated rounded-xl overflow-hidden flex flex-col min-w-[300px] slide-up">
+                    <div className="px-4 py-3.5 flex items-center gap-3">
                         {toast.type === 'success' ? (
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 shrink-0">
-                                <i className="ph-fill ph-check-circle text-xl"></i>
+                            <div className="w-7 h-7 rounded-full bg-accent-sage-light/10 flex items-center justify-center text-accent-sage-light shrink-0">
+                                <i className="ph-fill ph-check-circle text-lg"></i>
                             </div>
                         ) : (
-                            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-primary shrink-0">
-                                <i className="ph-fill ph-warning-circle text-xl"></i>
+                            <div className="w-7 h-7 rounded-full bg-accent-violet/10 flex items-center justify-center text-accent-violet shrink-0">
+                                <i className="ph-fill ph-warning-circle text-lg"></i>
                             </div>
                         )}
-                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{toast.message}</span>
+                        <span className="text-[12px] font-medium text-ink-secondary">{toast.message}</span>
                     </div>
-                    <div className="h-1.5 w-full bg-warm-100 dark:bg-gray-700">
-                        <div className={`h-full ${toast.type === 'success' ? 'bg-green-500' : 'bg-primary'} animate-toast-progress`}></div>
+                    <div className="h-0.5 w-full bg-surface-highlight">
+                        <div className={`h-full animate-toast-progress ${toast.type === 'success' ? 'bg-accent-sage-light' : 'bg-accent-violet'}`}></div>
                     </div>
                 </div>
             )}
@@ -311,124 +281,152 @@ export function DataAnalysis() {
                     isLoadingData={isLoadingData}
                 />
 
-                <main className="flex-1 overflow-y-auto p-6 bg-transparent dark:bg-gray-900/40 transition-all custom-scrollbar">
+                <main className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-surface-base/60">
 
                     {/* ── DASHBOARD ── */}
                     {currentView === 'dashboard' && (
-                        <div className="max-w-5xl mx-auto space-y-6 fade-in">
+                        <div className="max-w-5xl mx-auto space-y-5 fade-in">
 
-                            {/* Ecosistema de Calidad */}
-                            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 pointer-events-none"></div>
-                                <h2 className="text-2xl font-black mb-3 tracking-tight dark:text-white">Ecosistema de Calidad</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-500 dark:text-gray-400 leading-relaxed text-sm font-medium">
-                                    <p>Centralizamos la supervisión de los activos de <strong>Badajoz</strong>. Nuestro motor analiza cada registro en AWS para asegurar que la información cumpla con los estándares de excelencia requeridos.</p>
-                                    <p>Utilice las métricas para identificar carencias, priorizar la actualización y exportar informes. El objetivo es una ficha de datos 100% enriquecida para el mercado global.</p>
+                            {/* Editorial hero card */}
+                            <div className="bg-surface-elevated border border-white/[0.05] rounded-2xl p-8 relative overflow-hidden">
+                                {/* ambient glow */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-violet/5 rounded-full -mr-32 -mt-32 pointer-events-none blur-3xl" />
+                                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-ink-tertiary mb-4">
+                                    Sistema de Calidad de Datos
+                                </p>
+                                <h2 className="font-serif text-3xl font-semibold text-ink-primary mb-4 leading-snug">
+                                    Ecosistema de Auditoría
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-[13px] text-ink-tertiary leading-relaxed font-normal">
+                                    <p>
+                                        Centralizamos la supervisión de los activos turísticos de <span className="text-ink-secondary font-medium">Badajoz</span>. Nuestro motor analítico examina cada registro en AWS para asegurar que la información cumpla los estándares de excelencia requeridos.
+                                    </p>
+                                    <p>
+                                        Utilice las métricas para identificar carencias, priorizar actualizaciones y exportar informes de auditoría. El objetivo es una ficha de datos <span className="text-accent-sage-light font-medium">100% enriquecida</span> para el mercado global.
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Donut + Tarjetas de stats */}
+                            {/* Donut + Stat cards */}
                             {dashboardStats ? (
-                                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700 flex flex-col lg:flex-row items-center gap-10">
-                                    <div className="w-full lg:w-1/4 flex flex-col items-center">
-                                        <div className="relative h-40 w-40">
+                                <div className="bg-surface-elevated border border-white/[0.05] rounded-2xl p-8 flex flex-col lg:flex-row items-center gap-10">
+
+                                    {/* Donut */}
+                                    <div className="flex flex-col items-center gap-3 shrink-0">
+                                        <div className="relative h-36 w-36">
                                             <canvas ref={donutChartRef}></canvas>
                                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-3xl font-black dark:text-white">{dashboardStats.percentComplete}%</span>
+                                                <span className="text-[28px] font-bold text-ink-primary tabular-nums">{dashboardStats.percentComplete}%</span>
+                                                <span className="text-[8px] font-bold uppercase tracking-widest text-ink-tertiary mt-0.5">Salud</span>
                                             </div>
                                         </div>
-                                        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-black mt-2">
-                                            {locationFilter ? `Salud en ${locationFilter}` : tableFilter ? 'Salud de Categoría' : 'Salud Global'}
+
+                                        {/* Donut legend */}
+                                        <div className="flex flex-col gap-1.5">
+                                            {[
+                                                { label: 'Completos',   color: '#A3B18A' },
+                                                { label: 'En Revisión', color: '#D4AF37' },
+                                                { label: 'Incompletos', color: '#A78BFA' },
+                                            ].map(({ label, color }) => (
+                                                <div key={label} className="flex items-center gap-2 text-[10px] text-ink-tertiary">
+                                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                                    {label}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <span className="text-[9px] uppercase tracking-[0.2em] text-ink-tertiary font-bold">
+                                            {locationFilter ? locationFilter : tableFilter ? 'Categoría' : 'Global'}
                                         </span>
                                     </div>
-                                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        {[
-                                            { label: 'Completos',   value: dashboardStats.complete,   color: 'text-green-500', icon: 'ph-shield-check' },
-                                            { label: 'En Revisión', value: dashboardStats.enRevision, color: 'text-amber-500', icon: 'ph-clock' },
-                                            { label: 'Incompletos', value: dashboardStats.incomplete, color: 'text-primary',   icon: 'ph-warning-circle' },
-                                            { label: 'Total',       value: dashboardStats.total,      color: 'text-blue-500',  icon: 'ph-database' },
-                                        ].map(({ label, value, color, icon }) => (
-                                            <div key={label} className="p-5 rounded-xl bg-warm-50 dark:bg-gray-900/30 border border-warm-100 dark:border-gray-700/50 flex justify-between items-center">
-                                                <div>
-                                                    <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${color}`}>{label}</div>
-                                                    <div className={`text-2xl font-black ${color}`}>{value.toLocaleString()}</div>
-                                                </div>
-                                                <i className={`ph-fill ${icon} ${color} text-2xl opacity-80`}></i>
-                                            </div>
-                                        ))}
+
+                                    {/* Stat cards grid */}
+                                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <StatCard label="Completos"   value={dashboardStats.complete}   icon="ph-fill ph-shield-check"    color="#A3B18A" borderColor="#A3B18A" />
+                                        <StatCard label="En Revisión" value={dashboardStats.enRevision} icon="ph-fill ph-clock"            color="#D4AF37" borderColor="#D4AF37" />
+                                        <StatCard label="Incompletos" value={dashboardStats.incomplete} icon="ph-fill ph-warning-circle"   color="#A78BFA" borderColor="#A78BFA" />
+                                        <StatCard label="Total"       value={dashboardStats.total}      icon="ph-fill ph-database"         color="#C084FC" borderColor="#C084FC" />
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700 flex items-center justify-center text-gray-400 gap-3">
-                                    <i className="ph ph-spinner animate-spin text-2xl text-primary"></i>
-                                    <span className="font-bold">Cargando datos...</span>
+                                <div className="bg-surface-elevated border border-white/[0.05] rounded-2xl p-16 flex items-center justify-center text-ink-tertiary gap-3">
+                                    <i className="ph ph-spinner animate-spin text-2xl text-accent-violet/60"></i>
+                                    <span className="text-[13px] font-medium">Cargando datos…</span>
                                 </div>
                             )}
 
-                            {/* Pills de categorías */}
+                            {/* Category pills */}
                             {!tableFilter && sortedSummary.length > 0 && (
-                                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-warm-100 dark:border-gray-700">
-                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center">
-                                        <i className="ph-fill ph-circles-four mr-2 text-primary text-lg"></i>
-                                        Calidad de Categorías
-                                    </h4>
-                                    <div className="flex flex-wrap gap-3">
-                                        {sortedSummary.map(cat => (
-                                            <button
-                                                key={cat.name}
-                                                onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
-                                                className="pill-transition flex items-center px-4 py-2 rounded-xl border border-opacity-10 hover:shadow-lg transition-all group"
-                                                style={{
-                                                    backgroundColor: getPastelColor(cat.percent, isDark),
-                                                    borderColor: isDark ? getSolidColor(cat.percent, isDark) : 'transparent'
-                                                }}
-                                            >
-                                                <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 mr-3 group-hover:text-primary">
-                                                    {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
-                                                </span>
-                                                <span
-                                                    className="text-[10px] font-black px-2 py-0.5 rounded-lg text-white"
-                                                    style={{ backgroundColor: getSolidColor(cat.percent, isDark) }}
+                                <div className="bg-surface-elevated border border-white/[0.05] rounded-2xl p-8">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <i className="ph-fill ph-circles-four text-accent-violet/60 text-base"></i>
+                                        <h4 className="text-[9px] font-bold text-ink-tertiary uppercase tracking-[0.2em]">
+                                            Calidad por Categoría
+                                        </h4>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {sortedSummary.map(cat => {
+                                            const solidColor = getSolidColor(cat.percent, isDark);
+                                            const pastelBg = getPastelColor(cat.percent, isDark);
+                                            return (
+                                                <button
+                                                    key={cat.name}
+                                                    onClick={() => { setTableFilter(cat.name); setCurrentView('data'); }}
+                                                    className="pill-transition flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-white/[0.05] hover:border-white/[0.12] hover:scale-[1.02] transition-all text-left"
+                                                    style={{ backgroundColor: pastelBg }}
                                                 >
-                                                    {cat.percent}%
-                                                </span>
-                                            </button>
-                                        ))}
+                                                    <span className="text-[11px] font-medium text-ink-secondary">
+                                                        {CATEGORY_TRANSLATIONS[cat.name] || cat.name}
+                                                    </span>
+                                                    <span
+                                                        className="text-[9px] font-bold px-2 py-0.5 rounded-lg text-surface-base tabular-nums"
+                                                        style={{ backgroundColor: solidColor }}
+                                                    >
+                                                        {cat.percent}%
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* ── VISTA DE DATOS ── */}
+                    {/* ── DATA VIEW ── */}
                     {currentView === 'data' && (
-                        <div className="max-w-full mx-auto h-full flex flex-col fade-in space-y-4">
+                        <div className="max-w-full mx-auto h-full flex flex-col fade-in gap-4">
 
-                            {/* Barra de herramientas */}
-                            <div className="flex flex-col md:flex-row items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-xl border border-warm-100 dark:border-gray-700 shadow-sm gap-4">
-                                <div className="flex items-center gap-6 w-full md:w-auto">
-                                    <div className="relative w-full md:w-80">
-                                        <i className="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            {/* Toolbar */}
+                            <div className="flex flex-col md:flex-row items-center justify-between bg-surface-elevated border border-white/[0.05] px-4 py-3 rounded-2xl gap-4">
+                                <div className="flex items-center gap-4 w-full md:w-auto">
+                                    {/* Search */}
+                                    <div className="relative w-full md:w-72">
+                                        <i className="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary text-sm"></i>
                                         <input
                                             type="text"
-                                            placeholder="Localizar..."
+                                            placeholder="Localizar registro…"
                                             value={tableSearch}
                                             onChange={e => setTableSearch(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 border border-warm-200 dark:border-gray-600 rounded-xl text-xs bg-warm-50 dark:bg-gray-900 outline-none focus:ring-2 focus:ring-primary/20 font-semibold text-gray-700 dark:text-gray-300"
+                                            className="w-full pl-9 pr-4 py-2.5 bg-surface-overlay border border-white/[0.06] rounded-xl text-[12px] font-medium text-ink-secondary placeholder-ink-tertiary outline-none focus:border-accent-violet/40 focus:ring-1 focus:ring-accent-violet/20 transition-all"
                                         />
                                     </div>
-                                    <label className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-400 cursor-pointer whitespace-nowrap">
+                                    {/* Checkbox */}
+                                    <label className="flex items-center gap-2.5 cursor-pointer whitespace-nowrap">
                                         <input
                                             type="checkbox"
                                             checked={showOnlyIncomplete}
                                             onChange={e => setShowOnlyIncomplete(e.target.checked)}
-                                            className="rounded text-primary focus:ring-primary w-4 h-4 border-warm-200 cursor-pointer"
+                                            className="w-4 h-4 rounded border-white/20 bg-surface-overlay accent-accent-violet cursor-pointer"
                                         />
-                                        <span>Solo Faltantes</span>
+                                        <span className="text-[11px] font-medium text-ink-tertiary">Solo Faltantes</span>
                                     </label>
                                 </div>
+
                                 <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                                    <span className="text-xs text-gray-400 font-medium">{filteredAndSortedRows.length} registros</span>
+                                    <span className="text-[11px] text-ink-tertiary tabular-nums">
+                                        {filteredAndSortedRows.length} registros
+                                    </span>
                                     <ExcelDownloadButton
                                         onClick={exportTableToExcel}
                                         label="Exportar Excel"
@@ -451,7 +449,6 @@ export function DataAnalysis() {
                 </main>
             </div>
 
-            {/* Modal de detalle */}
             <DetailModal
                 isOpen={!!selectedRow}
                 data={selectedRow}

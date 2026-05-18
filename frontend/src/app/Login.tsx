@@ -40,19 +40,27 @@ export function Login() {
                 setError(data.message || 'Credenciales incorrectas');
             }
         } catch {
-            setError('No se pudo conectar con el servidor. ¿Está el backend encendido?');
+            setError('No se pudo conectar con el servidor.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    return (
-        <div className="flex min-h-screen bg-[#0d1117]">
+    const inputClass = `
+        w-full px-4 py-3.5
+        bg-surface-overlay border border-white/[0.07]
+        rounded-xl outline-none
+        focus:border-accent-violet/50 focus:ring-1 focus:ring-accent-violet/20
+        text-[13px] font-medium text-ink-primary placeholder-ink-tertiary
+        transition-all duration-200
+    `.trim();
 
-            {/* ── Panel izquierdo: carrusel ─────────────────────────────────── */}
+    return (
+        <div className="flex min-h-screen bg-surface-base">
+
+            {/* ── Left: cinematic carousel ──────────────────────────────────── */}
             <div className="hidden lg:block relative overflow-hidden w-[58%]">
 
-                {/* Imágenes apiladas, fundido entre ellas */}
                 {CAROUSEL_IMAGES.map((src, i) => (
                     <img
                         key={src}
@@ -61,39 +69,39 @@ export function Login() {
                         className="absolute inset-0 w-full h-full object-cover"
                         style={{
                             opacity: i === slideIndex ? 1 : 0,
-                            transition: 'opacity 1.2s ease-in-out',
+                            transition: 'opacity 1.4s ease-in-out',
                         }}
                     />
                 ))}
 
-                {/* Gradiente: oscurece bordes, especialmente el derecho hacia el panel del form */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-black/10 to-black/70 pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10 pointer-events-none" />
+                {/* Cinematic overlays */}
+                <div className="absolute inset-0 bg-gradient-to-r from-surface-base/20 via-surface-base/10 to-surface-base/80 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface-base/80 via-transparent to-surface-base/20 pointer-events-none" />
 
-                {/* Branding inferior */}
-                <div className="absolute bottom-10 left-10 right-10 text-white">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-3">
+                {/* Editorial branding */}
+                <div className="absolute bottom-12 left-10 right-16 text-white">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-white/40 mb-4">
                         Badajoz Data Consulting
                     </p>
-                    <h1 className="text-5xl font-black tracking-tight leading-none drop-shadow-xl">
+                    <h1 className="font-serif text-5xl font-bold tracking-tight leading-[1.15] drop-shadow-2xl">
                         Tourism<br />
-                        <span className="text-white/70">Dashboard</span>
+                        <span className="text-white/50 italic font-light">Dashboard</span>
                     </h1>
-                    <p className="mt-4 text-sm text-white/50 font-medium max-w-xs leading-relaxed">
-                        Gestión y auditoría de calidad de datos turísticos de Badajoz.
+                    <p className="mt-5 text-[12px] text-white/40 font-normal max-w-xs leading-relaxed">
+                        Gestión y auditoría de calidad de datos turísticos de la provincia de Badajoz.
                     </p>
 
-                    {/* Dots de navegación (solo si hay más de 1 imagen) */}
+                    {/* Carousel dots */}
                     {CAROUSEL_IMAGES.length > 1 && (
-                        <div className="flex items-center gap-2 mt-8">
+                        <div className="flex items-center gap-1.5 mt-8">
                             {CAROUSEL_IMAGES.map((_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setSlideIndex(i)}
-                                    className="h-1 rounded-full transition-all duration-500"
+                                    className="h-0.5 rounded-full transition-all duration-500"
                                     style={{
-                                        width: i === slideIndex ? '2rem' : '0.4rem',
-                                        backgroundColor: i === slideIndex ? 'white' : 'rgba(255,255,255,0.35)',
+                                        width: i === slideIndex ? '1.75rem' : '0.35rem',
+                                        backgroundColor: i === slideIndex ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)',
                                     }}
                                 />
                             ))}
@@ -102,31 +110,33 @@ export function Login() {
                 </div>
             </div>
 
-            {/* ── Panel derecho: formulario ─────────────────────────────────── */}
-            <div className="flex-1 flex items-center justify-center min-h-screen p-8 bg-[#0d1117]">
-                <div className="w-full max-w-[400px]">
+            {/* ── Right: login form ─────────────────────────────────────────── */}
+            <div className="flex-1 flex items-center justify-center min-h-screen p-8 bg-surface-base">
+                <div className="w-full max-w-[380px]">
 
+                    {/* Logos */}
                     <div className="mb-10 flex flex-col items-center text-center">
-                        <img src={logoBadajoz} alt="Badajoz" className="h-10 mb-4 opacity-90" />
-                        <img src={logoRed} alt="Timestamp" className="h-5 mb-6 opacity-70" />
-                        <h2 className="text-[26px] font-bold tracking-tight text-white mb-1">
-                            Acceso Auditoría
+                        <img src={logoBadajoz} alt="Badajoz" className="h-9 mb-4 opacity-70 dark:invert" />
+                        <img src={logoRed} alt="Timestamp" className="h-4 mb-8 opacity-40" />
+                        <h2 className="font-serif text-[28px] font-semibold tracking-tight text-ink-primary mb-1.5">
+                            Acceso Privado
                         </h2>
-                        <p className="text-[#64748B] font-bold text-[11px] uppercase tracking-[0.2em] mt-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-ink-tertiary">
                             Data Quality Manager
                         </p>
                     </div>
 
+                    {/* Error */}
                     {error && (
-                        <div className="bg-[#2a1318] text-[#F3484A] border border-[#4a1c22] px-5 py-4 rounded-xl text-sm font-bold mb-8 flex items-center gap-3 slide-up">
-                            <div className="bg-[#ED2125] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shrink-0">!</div>
+                        <div className="bg-accent-wine/60 text-[#F3AAAC] border border-[#4a1c22]/60 px-4 py-3.5 rounded-xl text-[12px] font-medium mb-6 flex items-center gap-3 slide-up">
+                            <i className="ph-fill ph-warning-circle text-[#F3AAAC] text-lg shrink-0"></i>
                             {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase text-[#8B949E] tracking-widest block">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-bold uppercase text-ink-tertiary tracking-[0.15em] block ml-0.5">
                                 Identificador
                             </label>
                             <input
@@ -135,11 +145,11 @@ export function Login() {
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="admin"
-                                className="w-full px-5 py-4 bg-[#161B22] border border-[#30363D] rounded-xl outline-none focus:ring-1 focus:ring-[#ED2125] focus:border-[#ED2125] font-bold transition-all text-sm text-white placeholder-[#8B949E] shadow-inner"
+                                className={inputClass}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase text-[#8B949E] tracking-widest block">
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-bold uppercase text-ink-tertiary tracking-[0.15em] block ml-0.5">
                                 Credencial
                             </label>
                             <input
@@ -148,18 +158,32 @@ export function Login() {
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full px-5 py-4 bg-[#161B22] border border-[#30363D] rounded-xl outline-none focus:ring-1 focus:ring-[#ED2125] focus:border-[#ED2125] font-bold transition-all text-sm text-white placeholder-[#8B949E] shadow-inner"
+                                className={inputClass}
                             />
                         </div>
+
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-[#ED2125] hover:bg-[#c91d20] disabled:bg-[#6b1013] text-white py-4 rounded-xl font-bold text-base transition-all active:scale-95 mt-2 flex items-center justify-center gap-2"
+                            className="
+                                w-full py-3.5 mt-2 rounded-xl
+                                font-semibold text-[13px] text-white
+                                bg-gradient-to-r from-accent-violet to-accent-purple
+                                hover:opacity-90 active:scale-[0.98]
+                                disabled:opacity-40 disabled:cursor-not-allowed
+                                transition-all duration-200
+                                flex items-center justify-center gap-2
+                                shadow-glow-violet
+                            "
                         >
-                            {isLoading && <i className="ph ph-spinner animate-spin text-lg"></i>}
+                            {isLoading && <i className="ph ph-spinner animate-spin text-base"></i>}
                             {isLoading ? 'Conectando...' : 'Iniciar Sesión'}
                         </button>
                     </form>
+
+                    <p className="mt-8 text-center text-[10px] text-ink-tertiary">
+                        © {new Date().getFullYear()} Badajoz Data Consulting
+                    </p>
                 </div>
             </div>
         </div>

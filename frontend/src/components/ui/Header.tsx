@@ -1,45 +1,46 @@
-// src/app/components/ui/Header.tsx
-
-// Importamos React
-import React from 'react';
 import logoBadajoz from '../../assets/badajoz.svg';
 import logoRed from '../../assets/logo-red.svg';
 
-// Definimos los "Props" (las propiedades o datos que este componente necesita recibir desde fuera)
 interface HeaderProps {
-    userEmail: string;       // Necesitamos el email del usuario para mostrarlo
-    onLogout: () => void;    // Necesitamos una función que se ejecute al darle a "Salir"
+    userEmail: string;
+    onLogout: () => void;
 }
 
-// Creamos el componente Header recibiendo esas propiedades
 export function Header({ userEmail, onLogout }: HeaderProps) {
-    return (
-        <header className="h-14 bg-[#2a3241] border-b-[3px] border-[#EB1C23] flex items-center justify-between px-5 z-30 shrink-0 shadow-md">
+    const username = userEmail ? userEmail.split('@')[0] : 'Consultor';
+    const initial = username.charAt(0).toUpperCase();
 
-            {/* Lado izquierdo: Logos y Título */}
-            <div className="flex items-center space-x-5">
-                <div className="flex items-center space-x-3">
-                    {/* Usamos las variables importadas en el atributo src */}
-                    <img src={logoBadajoz} alt="Badajoz" className="h-7 object-contain dark:invert" />
-                    <img src={logoRed} alt="Timestamp" className="h-7 object-contain" />
+    return (
+        <header className="h-14 bg-[#141416]/90 backdrop-blur-xl border-b border-white/[0.05] flex items-center justify-between px-6 z-30 shrink-0">
+
+            {/* Left: logos + title */}
+            <div className="flex items-center gap-5">
+                <div className="flex items-center gap-3">
+                    <img src={logoBadajoz} alt="Badajoz" className="h-6 object-contain opacity-80 dark:invert" />
+                    <div className="w-px h-4 bg-white/10" />
+                    <img src={logoRed} alt="Timestamp" className="h-4 object-contain opacity-50" />
                 </div>
-                <div className="h-6 w-px bg-gray-600 hidden sm:block"></div>
-                <span className="text-base font-bold text-white font-serif tracking-tight hidden sm:block">
-                    Auditoría Turística Badajoz
-                </span>
+                <div className="hidden sm:flex items-center gap-2">
+                    <div className="w-px h-5 bg-white/8" />
+                    <span className="text-[13px] font-semibold text-ink-secondary tracking-tight">
+                        Auditoría Turística Badajoz
+                    </span>
+                </div>
             </div>
 
-            {/* Lado derecho: Usuario y botón de salir */}
-            <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-1 rounded-full border border-slate-600 text-xs text-gray-300">
-                    <i className="ph ph-user-circle text-lg"></i>
-
-                    {/* Usamos JavaScript (con llaves) para mostrar la primera parte del email dinámicamente */}
-                    <span className="font-semibold">{userEmail ? userEmail.split('@')[0] : 'Consultor'}</span>
-
-                    {/* Enlazamos el botón a la función onLogout que nos han pasado como propiedad */}
-                    <button onClick={onLogout} className="ml-1 hover:text-white transition-colors" title="Salir">
-                        <i className="ph ph-power text-lg"></i>
+            {/* Right: user pill + logout */}
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5 bg-white/[0.04] border border-white/[0.07] px-3 py-1.5 rounded-full">
+                    <span className="w-5 h-5 rounded-full bg-accent-violet/20 border border-accent-violet/30 flex items-center justify-center text-[10px] font-bold text-accent-violet">
+                        {initial}
+                    </span>
+                    <span className="text-[11px] font-semibold text-ink-secondary">{username}</span>
+                    <button
+                        onClick={onLogout}
+                        title="Cerrar sesión"
+                        className="ml-0.5 text-ink-tertiary hover:text-ink-secondary transition-colors"
+                    >
+                        <i className="ph ph-power text-base leading-none"></i>
                     </button>
                 </div>
             </div>

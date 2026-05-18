@@ -1,31 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
 
 body {
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar global */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* ── Scrollbars ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.dark ::-webkit-scrollbar-thumb { background: #475569; }
+::-webkit-scrollbar-thumb { background: #2A2A2E; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A3F; }
 
-/* Scrollbar compacto para paneles internos */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+.dark ::-webkit-scrollbar-thumb { background: #2A2A2E; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #3A3A3F; }
 
-/* Animaciones */
-.fade-in { animation: fadeIn 0.4s ease-out; }
-.slide-up { animation: slideUp 0.3s ease-out; }
+.custom-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #2A2A2E; border-radius: 10px; }
+
+/* ── Glass morphism utilities ────────────────────────────────────────────────── */
+.glass {
+  background: rgba(20, 20, 22, 0.80);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.glass-overlay {
+  background: rgba(31, 31, 34, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────────── */
+.fade-in  { animation: fadeIn 0.35s ease-out; }
+.slide-up { animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 /* Toast progress bar */
@@ -35,25 +52,31 @@ body {
 }
 .animate-toast-progress { animation: toastProgress 5s linear forwards; }
 
-/* Pills de categoría */
-.pill-transition { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+/* Category pills */
+.pill-transition { transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
 
-/* Redimensionador de columna en tabla */
+/* ── Column resizer ──────────────────────────────────────────────────────────── */
 .resizer {
   position: absolute;
   right: 0; top: 0;
   height: 100%; width: 4px;
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
   cursor: col-resize;
   user-select: none;
   touch-action: none;
   transition: background 0.2s;
 }
-.dark .resizer { background: rgba(255, 255, 255, 0.05); }
 .resizer:hover,
-.resizer.is-resizing { background: #EB1C23; width: 4px; }
+.resizer.is-resizing { background: #A78BFA; width: 3px; }
 
-/* ── Excel download button animations ──────────────────────────────────────── */
+/* ── Glow pulse (subtle ambient) ─────────────────────────────────────────────── */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}
+.animate-glow { animation: glowPulse 3s ease-in-out infinite; }
+
+/* ── Excel download button animations ───────────────────────────────────────── */
 @keyframes xb-blob-enter {
   0%   { border-radius: 50%; transform: scale(0.3) rotate(-20deg); opacity: 0; }
   45%  { border-radius: 58% 42% 48% 52% / 55% 50% 50% 45%; transform: scale(1.18) rotate(8deg); opacity: 1; }
@@ -63,40 +86,40 @@ body {
 }
 @keyframes xb-done-enter {
   from { border-radius: 24%; transform: scale(0.7); opacity: 0; }
-  to   { border-radius: 50%; transform: scale(1); opacity: 1; }
+  to   { border-radius: 50%; transform: scale(1);   opacity: 1; }
 }
 @keyframes xb-check-draw {
   from { stroke-dashoffset: 20; opacity: 0; }
   to   { stroke-dashoffset: 0;  opacity: 1; }
 }
 @keyframes xb-burst {
-  from { transform: scale(1); opacity: 0.55; }
-  to   { transform: scale(2); opacity: 0; }
+  from { transform: scale(1);  opacity: 0.55; }
+  to   { transform: scale(2);  opacity: 0; }
 }
 @keyframes xb-line-draw {
   from { stroke-dashoffset: 16; opacity: 0; }
   to   { stroke-dashoffset: 0;  opacity: 0.92; }
 }
 @keyframes xb-row-scan {
-  0%        { transform: translateY(0);    opacity: 0; }
-  20%       { opacity: 0.85; }
-  75%       { opacity: 0.85; }
-  100%      { transform: translateY(10px); opacity: 0; }
+  0%   { transform: translateY(0);    opacity: 0; }
+  20%  { opacity: 0.85; }
+  75%  { opacity: 0.85; }
+  100% { transform: translateY(10px); opacity: 0; }
 }
 @keyframes xb-dot {
-  0%, 100% { transform: translateY(0);  opacity: 0.45; }
+  0%, 100% { transform: translateY(0);    opacity: 0.45; }
   50%       { transform: translateY(-3px); opacity: 1; }
 }
 @keyframes xb-label-in {
   from { opacity: 0; transform: translateY(7px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.xb-blob-anim     { animation: xb-blob-enter 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
-.xb-grid-settled  { border-radius: 24%; transform: scale(1); opacity: 1; }
-.xb-done-enter    { animation: xb-done-enter 0.4s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
-.xb-check-draw    { animation: xb-check-draw 0.42s cubic-bezier(0.65, 0, 0.35, 1) 0.16s forwards; }
-.xb-burst         { animation: xb-burst 0.7s ease-out 0.18s forwards; }
-.xb-line-draw     { animation: xb-line-draw 0.32s ease-out forwards; }
-.xb-row-scan      { animation: xb-row-scan 1.4s ease-in-out infinite; }
-.xb-dot           { animation: xb-dot 0.9s ease-in-out infinite; }
-.xb-label-in      { animation: xb-label-in 0.22s ease forwards; }
+.xb-blob-anim    { animation: xb-blob-enter 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
+.xb-grid-settled { border-radius: 24%; transform: scale(1); opacity: 1; }
+.xb-done-enter   { animation: xb-done-enter 0.4s cubic-bezier(0.34, 1.4, 0.5, 1) forwards; }
+.xb-check-draw   { animation: xb-check-draw 0.42s cubic-bezier(0.65, 0, 0.35, 1) 0.16s forwards; }
+.xb-burst        { animation: xb-burst 0.7s ease-out 0.18s forwards; }
+.xb-line-draw    { animation: xb-line-draw 0.32s ease-out forwards; }
+.xb-row-scan     { animation: xb-row-scan 1.4s ease-in-out infinite; }
+.xb-dot          { animation: xb-dot 0.9s ease-in-out infinite; }
+.xb-label-in     { animation: xb-label-in 0.22s ease forwards; }
